@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-dim: #121414;
+  --color-secondary-container: #00c7a5;
+  --color-teal-trust: #00C9A7;
+  --color-surface-container-low: #1a1c1c;
+  --color-on-surface: #e2e2e2;
+  --color-on-secondary-fixed-variant: #005142;
+  --color-on-background: #e2e2e2;
+  --color-surface-container-highest: #333535;
+  --color-outline: #9f8e7a;
+  --color-primary-fixed-dim: #ffb955;
+  --color-primary-fixed: #ffddb4;
+  --color-primary: #ffc880;
+  --color-on-primary-container: #644000;
+  --color-on-primary-fixed: #291800;
+  --color-on-error: #690005;
+  --color-deep-navy-bg: #0A0F1E;
+  --color-error: #ffb4ab;
+  --color-tertiary-container: #b1b5ca;
+  --color-surface-container-high: #282a2b;
+  --color-surface-container-lowest: #0c0f0f;
+  --color-tertiary: #cdd1e6;
+  --color-on-secondary-fixed: #002019;
+  --color-tertiary-fixed: #dee1f7;
+  --color-inverse-surface: #e2e2e2;
+  --color-on-surface-variant: #d7c3ae;
+  --color-surface-variant: #333535;
+  --color-surface-bright: #37393a;
+  --color-surface-tint: #ffb955;
+  --color-glass-fill: rgba(255, 255, 255, 0.05);
+  --color-outline-variant: #524534;
+  --color-on-tertiary-container: #424758;
+  --color-on-primary: #452b00;
+  --color-inverse-primary: #835500;
+  --color-on-primary-fixed-variant: #633f00;
+  --color-on-secondary: #00382d;
+  --color-tertiary-fixed-dim: #c2c6db;
+  --color-secondary-fixed: #5ffbd6;
+  --color-amber-glow: rgba(245, 166, 35, 0.15);
+  --color-on-secondary-container: #004d3f;
+  --color-primary-container: #f5a623;
+  --color-background: #121414;
+  --color-inverse-on-surface: #2f3131;
+  --color-surface-container: #1e2020;
+  --color-surface: #121414;
+  --color-on-tertiary: #2b3040;
+  --color-secondary-fixed-dim: #38debb;
+  --color-on-tertiary-fixed-variant: #414658;
+  --color-error-container: #93000a;
+  --color-on-tertiary-fixed: #161b2b;
+  --color-on-error-container: #ffdad6;
+  --color-glass-stroke: rgba(255, 255, 255, 0.12);
+  --color-secondary: #41e4c0;
+
+  --font-display-lg: "Playfair Display", serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-title-lg: "Inter", sans-serif;
+  --font-label-sm: "Inter", sans-serif;
+  --font-headline-md: "Playfair Display", serif;
+  --font-display-lg-mobile: "Playfair Display", serif;
+  
+  --spacing-margin-mobile: 20px;
+  --spacing-margin-desktop: 40px;
+  --spacing-container-max: 1200px;
+  --spacing-gutter: 24px;
+  --spacing-unit: 8px;
+}
+
+body {
+  background-color: #0A0F1E;
+  color: #e2e2e2;
+  overflow-x: hidden;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px);
+}
+
+.hero-gradient {
+  background: linear-gradient(to bottom, rgba(10, 15, 30, 0.3) 0%, rgba(10, 15, 30, 0.8) 70%, rgba(10, 15, 30, 1) 100%);
+}
+
+.glowing-orb {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.1;
+}
+
+.friction-line {
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-dasharray: 4;
+  animation: dash 20s linear infinite;
+}
+
+@keyframes dash {
+  to { stroke-dashoffset: 1000; }
+}
+
+.float {
+  animation: floating 6s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+.grid-bg {
+  background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+.animate-scroll {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+  40% {transform: translateY(-10px);}
+  60% {transform: translateY(-5px);}
+}
+
+.particle {
+  position: absolute;
+  background: #00C9A7;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cinematic-gradient {
+  background: linear-gradient(to bottom, rgba(10, 15, 30, 0.2) 0%, rgba(10, 15, 30, 0.8) 50%, rgba(10, 15, 30, 1) 100%);
+}
+
+.mosaic-bg {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-auto-rows: 250px;
+  gap: 8px;
+  transform: scale(1.1);
+  filter: saturate(0.8) brightness(0.6);
+}
+
+.mosaic-item:nth-child(3n) { grid-row: span 2; }
+.mosaic-item:nth-child(4n) { grid-column: span 2; }
+
+.floating-orb {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 100%;
+  filter: blur(120px);
+  z-index: 1;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.orb-amber { background: radial-gradient(circle, #ffb955 0%, transparent 70%); top: -20%; left: -10%; }
+.orb-teal { background: radial-gradient(circle, #00C9A7 0%, transparent 70%); bottom: -20%; right: -10%; }
+
+::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Tinder Swipeable Deck & Companion Finder */
+.swipe-card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(30, 30, 30, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transform-origin: 50% 100%;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15), opacity 0.4s;
+}
+
+.swipe-card:active {
+  cursor: grabbing;
+}
+
+.stamp {
+  position: absolute;
+  top: 24px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  z-index: 10;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.stamp-like {
+  right: 24px;
+  border: 3px solid #00C9A7;
+  color: #00C9A7;
+  transform: rotate(15deg);
+}
+
+.stamp-nope {
+  left: 24px;
+  border: 3px solid #EF4444;
+  color: #EF4444;
+  transform: rotate(-15deg);
+}
+
+/* Safety Pulse Button Alert */
+.pulse-btn {
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes floatParticle {
+  0% { transform: translateY(0px) translateX(0px); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+}
+
+
