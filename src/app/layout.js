@@ -1,4 +1,5 @@
 import "./globals.css";
+import WandrAssistant from "@/components/WandrAssistant";
 
 export const metadata = {
   title: "Wandr AI | Your World. One App.",
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-full flex flex-col bg-[#0A0F1E] text-[#e2e2e2] overflow-x-hidden">
         {children}
+        <WandrAssistant />
       </body>
     </html>
   );

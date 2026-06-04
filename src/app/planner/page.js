@@ -148,42 +148,11 @@ export default function Planner() {
 
   const handleAssistantQuery = (e) => {
     if (e) e.preventDefault();
-    const query = assistantInput.trim().toLowerCase();
-    if (!query) {
-      alert("Please enter a destination (e.g. Ziro, Spiti, Munnar).");
+    if (!assistantInput.trim()) {
+      alert("Please enter a destination or query.");
       return;
     }
-
-    const keywords = {
-      ziro: "ziro",
-      arunachal: "ziro",
-      spiti: "spiti",
-      himachal: "spiti",
-      meghalaya: "meghalaya",
-      shillong: "meghalaya",
-      root: "meghalaya",
-      hampi: "hampi",
-      karnataka: "hampi",
-      ladakh: "ladakh",
-      leh: "ladakh",
-      munnar: "munnar",
-      kerala: "munnar"
-    };
-
-    let matched = null;
-    for (const key in keywords) {
-      if (query.includes(key)) {
-        matched = keywords[key];
-        break;
-      }
-    }
-
-    if (matched) {
-      setDestination(matched);
-      triggerCompile(matched, duration, budget);
-    } else {
-      alert(`"${assistantInput}" submitted. Standard AI compilation routes synthesized for general region.\n\nTry searching: Ziro, Spiti, Hampi, Munnar, Meghalaya.`);
-    }
+    router.push("/curated");
   };
 
   const resetForm = () => {
@@ -253,141 +222,7 @@ export default function Planner() {
           </div>
         </section>
 
-        {/* Dual Form/Itinerary Console */}
-        <section className="glass-card rounded-2xl border border-glass-stroke p-8 mb-16 shadow-2xl relative overflow-hidden">
-          <div className="absolute -top-10 -left-10 bg-teal-trust/5 w-60 h-60 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            
-            {/* Input Settings Console */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              <div className="space-y-2">
-                <div className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-[10px] inline-block font-bold uppercase tracking-wider">Configure Parameters</div>
-                <h2 className="font-headline-md text-2xl text-on-surface">Route Compilation Console</h2>
-                <p className="text-xs text-on-surface-variant leading-relaxed">Define destination parameters, days coordinates, and budget scopes to execute the AI compiler.</p>
-              </div>
 
-              <div className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="destSelect" className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Destination</label>
-                  <select
-                    id="destSelect"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="bg-surface-container-low border border-glass-stroke text-on-surface text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                  >
-                    <option value="">Select Destination...</option>
-                    <option value="ziro">Ziro Valley (Arunachal Pradesh)</option>
-                    <option value="spiti">Spiti Valley (Himachal Pradesh)</option>
-                    <option value="meghalaya">Cherrapunji & Shillong (Meghalaya)</option>
-                    <option value="hampi">Hampi Heritage Ruins (Karnataka)</option>
-                    <option value="ladakh">Leh Wilderness (Ladakh)</option>
-                    <option value="munnar">Munnar Valleys (Kerala)</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="daysSelect" className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Duration</label>
-                  <select
-                    id="daysSelect"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    className="bg-surface-container-low border border-glass-stroke text-on-surface text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                  >
-                    <option value="3">3 Days (Optimized Expedition)</option>
-                    <option value="5">5 Days (Complete Wilderness)</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="budgetSelect" className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Budget Coordinates</label>
-                  <select
-                    id="budgetSelect"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    className="bg-surface-container-low border border-glass-stroke text-on-surface text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                  >
-                    <option value="Explorer">Explorer (Homestays & Transit)</option>
-                    <option value="Premium">Premium (Luxury Eco-Resorts)</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => triggerCompile(destination, duration, budget)}
-                  className="w-full bg-primary-container text-on-primary-container py-3.5 rounded-lg text-sm font-semibold hover:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-md"
-                >
-                  <span className="material-symbols-outlined text-sm">cycle</span>
-                  <span>Compile AI Route</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Timeline display panels */}
-            <div className="lg:col-span-3 min-h-[300px] flex items-center justify-center border-t lg:border-t-0 lg:border-l border-glass-stroke pt-8 lg:pt-0 lg:pl-8">
-              
-              {/* Idle */}
-              {viewState === "idle" && (
-                <div className="flex flex-col items-center text-center gap-3">
-                  <span className="material-symbols-outlined text-primary/30 !text-6xl animate-pulse">terminal</span>
-                  <div>
-                    <h4 className="font-semibold text-on-surface text-md">AI Compiler Idle</h4>
-                    <p className="text-xs text-on-surface-variant max-w-xs mt-1">Ready for input configurations. Setup parameters on the left and trigger compilation.</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Loading */}
-              {viewState === "loading" && (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="spinner"></div>
-                  <span className="font-mono text-xs text-teal-trust">compiling_routes_and_lodgings.sh ...</span>
-                </div>
-              )}
-
-              {/* Results */}
-              {viewState === "results" && (
-                <div className="w-full space-y-6">
-                  <div className="flex justify-between items-center border-b border-glass-stroke pb-4">
-                    <div>
-                      <h3 className="font-headline-md text-xl text-primary">{resDetails.title}</h3>
-                      <p className="text-xs text-on-surface-variant mt-1">Duration: <span className="text-on-surface font-semibold">{resDetails.days}</span> Days | Budget: <span className="text-on-surface font-semibold">{resDetails.budget}</span></p>
-                    </div>
-                    <button
-                      onClick={resetForm}
-                      className="border border-glass-stroke bg-glass-fill hover:border-teal-trust text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-all text-on-surface"
-                    >
-                      <span className="material-symbols-outlined text-xs">restart_alt</span>
-                      <span>Modify Options</span>
-                    </button>
-                  </div>
-
-                  <div className="space-y-4 max-h-[380px] overflow-y-auto pr-2 no-scrollbar">
-                    {compiledTimeline.map((step, idx) => (
-                      <div key={idx} className="flex items-start gap-4 border-l-2 border-teal-trust/30 pl-4 py-2 relative">
-                        <div className="absolute w-3 h-3 bg-teal-trust rounded-full -left-[7px] top-[14px] shadow-[0_0_8px_#00C9A7]"></div>
-                        <div className="space-y-1">
-                          <span className="font-mono text-[10px] text-teal-trust tracking-wider font-semibold">{step.time}</span>
-                          <h5 className="text-sm font-semibold text-on-surface font-title-lg">{step.title}</h5>
-                          <p className="text-xs text-on-surface-variant leading-relaxed">{step.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-end pt-2">
-                    <button
-                      onClick={handleLockTrip}
-                      className="bg-teal-trust text-on-secondary px-5 py-2.5 rounded-lg font-label-sm text-xs hover:scale-95 active:scale-95 transition-all shadow-md flex items-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-sm">lock</span>
-                      <span>Lock Trip & Unlock Companions</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </section>
 
         {/* Quick plan blueprints templates */}
         <section>
@@ -418,7 +253,7 @@ export default function Planner() {
                     onClick={() => {
                       setDestination(sight.key);
                       triggerCompile(sight.key, duration, budget);
-                      document.getElementById("destSelect").scrollIntoView({ behavior: "smooth", block: "center" });
+                      // Compilation Console removed
                     }}
                     className="bg-primary/10 border border-primary/20 text-primary py-2.5 rounded-lg text-xs font-semibold hover:bg-primary hover:text-on-primary transition-all flex items-center justify-center gap-1.5"
                   >

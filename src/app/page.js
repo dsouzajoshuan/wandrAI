@@ -42,6 +42,14 @@ export default function Home() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  const scrollToFeatures = (e) => {
+    e.preventDefault();
+    const element = document.getElementById("features");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -76,35 +84,42 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="relative z-20 text-center px-margin-mobile max-w-3xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface leading-tight tracking-tight">
-              Your World. One App.
-            </h1>
-            <p className="font-headline-md text-headline-md text-primary tracking-widest uppercase text-sm md:text-xl">
+        <div className="relative z-20 text-center px-margin-mobile max-w-5xl mx-auto flex flex-col items-center justify-center gap-8 pt-10">
+          <h1 className="font-display-lg text-display-lg-mobile md:text-2xl lg:text-3xl text-on-surface leading-tight tracking-[0.2em] opacity-80 uppercase">
+            Your World. One App.
+          </h1>
+
+          {/* Central Wandr AI Text (representing >= 20% of desktop viewport width) */}
+          <div className="relative my-2 py-4">
+            {/* Pulsing neon glass glow behind the text */}
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-[80px] animate-pulse"></div>
+            
+            <h2 className="font-display-lg text-[64px] md:text-[100px] lg:text-[120px] text-primary tracking-[0.15em] uppercase font-black leading-none bg-gradient-to-r from-primary via-secondary to-teal-trust bg-clip-text text-transparent transition-all duration-500 hover:scale-[1.02] cursor-default relative z-10">
               Wandr AI
-            </p>
+            </h2>
           </div>
-          <p className="font-body-md text-body-md text-on-surface-variant max-w-xl mx-auto">
+
+          <p className="font-body-md text-body-md md:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
             Plan trips. Discover hidden places. Book everything. Travel safer. The next evolution of luxury travel coordination.
           </p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-gutter pt-8">
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-gutter pt-4 w-full relative z-30">
             <Link
               href="/planner"
               className="w-full md:w-auto bg-primary-container px-10 py-4 rounded-md text-on-primary-container font-title-lg text-title-lg text-center shadow-[0_0_20px_rgba(245,166,35,0.3)] hover:scale-105 transition-transform duration-300"
             >
               Start Planning Free
             </Link>
-            <Link
-              href="/discover"
-              className="w-full md:w-auto border border-secondary text-secondary px-10 py-4 rounded-md font-title-lg text-title-lg text-center hover:bg-secondary/10 transition-all duration-300"
+            <button
+              onClick={scrollToFeatures}
+              className="w-full md:w-auto border border-secondary text-secondary px-10 py-4 rounded-md font-title-lg text-title-lg text-center hover:bg-secondary/10 transition-all duration-300 cursor-pointer outline-none relative z-30"
             >
-              See How It Works
-            </Link>
+              Explore Features
+            </button>
           </div>
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 opacity-60">
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 opacity-60 pointer-events-none select-none">
           <span className="font-label-sm text-label-sm text-teal-trust tracking-widest uppercase">Explore</span>
           <span className="material-symbols-outlined text-teal-trust animate-scroll">keyboard_double_arrow_down</span>
         </div>
@@ -191,17 +206,9 @@ export default function Home() {
       </section>
 
       {/* Solution Overview Section */}
-      <section className="relative z-10 py-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto overflow-hidden">
+      <section id="features" className="relative z-10 py-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto overflow-hidden scroll-mt-20">
         <div className="fixed inset-0 grid-bg pointer-events-none z-[-1] opacity-50"></div>
-        <div className="text-center mb-20">
-          <h1 className="font-headline-md md:font-display-lg text-headline-md md:text-display-lg text-on-surface mb-4">
-            Everything your trip needs.
-          </h1>
-          <p className="font-title-lg text-on-surface-variant opacity-80">
-            One platform. Zero switching.
-          </p>
-        </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-gutter">
           <Link href="/planner" className="glass-card p-10 rounded-xl relative overflow-hidden group block">
             <div className="absolute top-6 right-6 font-display-lg text-primary/20 text-[40px]">01</div>
