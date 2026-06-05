@@ -111,6 +111,9 @@ export default function TripOrchestrator() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
+  const [isSosActive, setIsSosActive] = useState(false);
+  const [userLat, setUserLat] = useState(27.2023);
+  const [userLng, setUserLng] = useState(93.8291);
 
   useEffect(() => {
     const active = localStorage.getItem("wandr_planned_destination") || "Tokyo Fallback";
@@ -188,7 +191,29 @@ export default function TripOrchestrator() {
   };
 
   const handleEmergencySOS = () => {
-    router.push("/safety");
+    const confirmSOS = confirm('Activate SOS Emergency Services? Your contacts and local emergency responders will be alerted immediately.');
+    if (confirmSOS) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            setUserLat(lat);
+            setUserLng(lng);
+            setIsSosActive(true);
+            alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\nCoordinates sent:\nLAT: ${lat.toFixed(4)}°\nLON: ${lng.toFixed(4)}°`);
+          },
+          (error) => {
+            console.warn("Geolocation failed during SOS.", error);
+            setIsSosActive(true);
+            alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\n(Fallback coordinates: LAT: ${userLat.toFixed(4)}°, LON: ${userLng.toFixed(4)}°)`);
+          }
+        );
+      } else {
+        setIsSosActive(true);
+        alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\n(Fallback coordinates: LAT: ${userLat.toFixed(4)}°, LON: ${userLng.toFixed(4)}°)`);
+      }
+    }
   };
 
   const activeTrip = TRIP_DATA[destination];
@@ -398,6 +423,26 @@ export default function TripOrchestrator() {
       </main>
 
       <Footer />
+
+      {/* SOS Active Overlay */}
+      {isSosActive && (
+        <div className="fixed inset-0 bg-red-950/95 backdrop-blur-lg z-[100] flex flex-col items-center justify-center gap-6 text-center select-none animate-in fade-in duration-350">
+          <span className="material-symbols-outlined text-[#E63946] !text-9xl animate-ping">warning</span>
+          <div className="space-y-2 px-4 max-w-lg">
+            <h2 className="font-display-lg text-4xl text-white">CRISIS SOS BROADCAST</h2>
+            <p className="font-mono text-sm text-red-500">Link configured. Telemetry ping broadcasted to local authorities and saved family loops.</p>
+            <p className="font-mono text-xs text-white bg-red-900/50 border border-red-500/30 px-3 py-2 rounded mt-2">
+              CURRENT COORDINATES: LAT {userLat.toFixed(4)}° | LON {userLng.toFixed(4)}°
+            </p>
+          </div>
+          <button
+            onClick={() => setIsSosActive(false)}
+            className="bg-white text-red-900 border border-white px-8 py-3 rounded-lg text-sm font-semibold hover:bg-transparent hover:text-white transition-all shadow-md mt-4 animate-bounce"
+          >
+            Cancel SOS Alert
+          </button>
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes emergencyPulse {

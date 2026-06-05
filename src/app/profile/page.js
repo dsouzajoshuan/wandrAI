@@ -15,8 +15,20 @@ export default function Profile() {
   const [loginPassword, setLoginPassword] = useState("");
   const [activeTrip, setActiveTrip] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [safetySettings, setSafetySettings] = useState({
+    syncRate: "2 minutes",
+    checkinInterval: "2 hours",
+    trackingMode: "Smart Sync",
+    alertLocalAuthorities: true,
+    smsFallback: true
+  });
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
+
+  // Edit Profile States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
 
   useEffect(() => {
     verifyAuth();
@@ -44,6 +56,16 @@ export default function Profile() {
       // Load contacts
       const savedContacts = JSON.parse(localStorage.getItem("wandr_emergency_contacts") || "[]");
       setContacts(savedContacts);
+
+      // Load safety settings
+      const savedSettings = localStorage.getItem("wandr_safety_settings");
+      if (savedSettings) {
+        try {
+          setSafetySettings(JSON.parse(savedSettings));
+        } catch (e) {
+          console.warn("Failed to parse safety settings.", e);
+        }
+      }
     } else {
       setIsLoggedIn(false);
     }
@@ -61,6 +83,24 @@ export default function Profile() {
   const handleLogout = () => {
     localStorage.removeItem("wandr_logged_in");
     verifyAuth();
+  };
+
+  const handleOpenEditModal = () => {
+    setEditName(userName);
+    setEditEmail(userEmail);
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    if (!editName.trim() || !editEmail.trim()) return;
+
+    localStorage.setItem("wandr_username", editName);
+    localStorage.setItem("wandr_useremail", editEmail);
+    setUserName(editName);
+    setUserEmail(editEmail);
+    setShowEditModal(false);
+    alert("Profile details updated successfully!");
   };
 
   const handleAddContact = (e) => {
@@ -131,7 +171,7 @@ export default function Profile() {
                   />
                 </div>
 
-                <button type="submit" className="w-full bg-primary-container text-on-primary-container py-3.5 rounded-lg text-sm font-semibold hover:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-md">
+                <button type="submit" className="w-full bg-primary-container text-on-primary-container py-3.5 rounded-lg text-sm font-semibold hover:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-md border-none outline-none cursor-pointer">
                   <span className="material-symbols-outlined text-sm">vpn_key</span>
                   <span>Sign In</span>
                 </button>
@@ -164,10 +204,22 @@ export default function Profile() {
                 </div>
               </div>
               
-              <button onClick={handleLogout} className="border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-xs px-5 py-2.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shrink-0">
-                <span className="material-symbols-outlined text-xs">logout</span>
-                <span>Sign Out</span>
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0 relative z-10">
+                <button 
+                  onClick={handleOpenEditModal}
+                  className="border border-glass-stroke hover:bg-glass-fill text-on-surface text-xs px-5 py-2.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shrink-0 bg-transparent outline-none cursor-pointer font-semibold"
+                >
+                  <span className="material-symbols-outlined text-xs">edit</span>
+                  <span>Edit Profile</span>
+                </button>
+                <button 
+                  onClick={handleLogout} 
+                  className="border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-500 text-xs px-5 py-2.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shrink-0 outline-none cursor-pointer font-semibold"
+                >
+                  <span className="material-symbols-outlined text-xs">logout</span>
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -210,6 +262,41 @@ export default function Profile() {
                     )}
                   </div>
                 </div>
+
+                {/* Active Safety Settings */}
+                <div className="glass-card rounded-2xl border border-glass-stroke p-6 space-y-4">
+                  <h3 className="font-headline-md text-lg text-on-surface border-b border-glass-stroke pb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-teal-trust">shield</span>
+                    <span>Safety Sync Profile</span>
+                  </h3>
+                  
+                  <div className="space-y-3 font-mono text-xs text-on-surface-variant">
+                    <div className="flex justify-between">
+                      <span>Tracking Mode:</span>
+                      <span className="text-on-surface font-semibold">{safetySettings.trackingMode}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Sync Interval:</span>
+                      <span className="text-on-surface font-semibold">{safetySettings.syncRate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Check-in Timer:</span>
+                      <span className="text-on-surface font-semibold">{safetySettings.checkinInterval}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Authority Alert:</span>
+                      <span className={safetySettings.alertLocalAuthorities ? "text-teal-trust font-semibold" : "text-red-400 font-semibold"}>
+                        {safetySettings.alertLocalAuthorities ? "ENABLED" : "DISABLED"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>SMS Fallback:</span>
+                      <span className={safetySettings.smsFallback ? "text-teal-trust font-semibold" : "text-red-400 font-semibold"}>
+                        {safetySettings.smsFallback ? "ENABLED" : "DISABLED"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Right Column: Family Emergency Contacts loop */}
@@ -240,7 +327,7 @@ export default function Profile() {
                               <div className="text-[10px] text-on-surface-variant font-mono mt-0.5">{contact.phone}</div>
                             </div>
                           </div>
-                          <button onClick={() => handleRemoveContact(idx)} className="text-error hover:underline text-xs flex items-center gap-0.5">
+                          <button onClick={() => handleRemoveContact(idx)} className="text-error hover:underline text-xs flex items-center gap-0.5 border-none bg-transparent outline-none cursor-pointer font-semibold">
                             <span className="material-symbols-outlined text-sm">delete</span>
                           </button>
                         </div>
@@ -269,7 +356,7 @@ export default function Profile() {
                         placeholder="Phone Number"
                       />
                     </div>
-                    <button type="submit" className="bg-secondary text-on-secondary px-5 py-2 rounded-lg font-label-sm text-xs hover:scale-95 active:scale-95 transition-all shadow-md flex items-center gap-1.5">
+                    <button type="submit" className="bg-secondary text-on-secondary px-5 py-2 rounded-lg font-label-sm text-xs hover:scale-95 active:scale-95 transition-all shadow-md flex items-center gap-1.5 border-none outline-none cursor-pointer font-semibold">
                       <span className="material-symbols-outlined text-sm">person_add</span>
                       <span>Register Contact</span>
                     </button>
@@ -281,6 +368,68 @@ export default function Profile() {
           </section>
         )}
       </main>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-card w-full max-w-md rounded-2xl border border-glass-stroke p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center border-b border-glass-stroke pb-3">
+              <h3 className="font-headline-md text-xl text-primary flex items-center gap-2">
+                <span className="material-symbols-outlined">edit</span>
+                <span>Edit Profile</span>
+              </h3>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="text-on-surface-variant hover:text-on-surface p-1 hover:bg-glass-fill rounded-full transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-on-surface-variant font-semibold uppercase tracking-wider font-mono text-left">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="bg-surface-container-low border border-glass-stroke text-on-surface text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                  placeholder="Your Name"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-on-surface-variant font-semibold uppercase tracking-wider font-mono text-left">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="bg-surface-container-low border border-glass-stroke text-on-surface text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-glass-stroke pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="border border-glass-stroke text-on-surface-variant hover:bg-glass-fill px-4 py-2.5 rounded-lg font-semibold transition-colors text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-primary text-on-primary-fixed hover:bg-primary-container px-5 py-2.5 rounded-lg font-semibold transition-colors text-xs border-none outline-none cursor-pointer"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
