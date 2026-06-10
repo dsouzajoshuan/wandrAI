@@ -9,7 +9,7 @@ export default function Safety() {
   const [userLng, setUserLng] = useState(93.8291);
   const [timerSeconds, setTimerSeconds] = useState(7969); // 02:12:49
   const [isSosActive, setIsSosActive] = useState(false);
-  
+
   // Contact States
   const [showContactModal, setShowContactModal] = useState(false);
   const [contacts, setContacts] = useState([
@@ -134,7 +134,8 @@ export default function Safety() {
         <div className="glowing-orb bottom-20 left-0 bg-teal-trust"></div>
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .material-symbols-outlined {
           font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24
         }
@@ -169,16 +170,16 @@ export default function Safety() {
 
       <main className="relative z-10 min-h-screen flex flex-col justify-center items-center pt-24 pb-20">
         <div className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          
+
           {/* Left Side: Emergency Interface */}
           <div className="flex flex-col items-center lg:items-start space-y-16 order-2 lg:order-1">
-            
+
             {/* Primary SOS Focal Point */}
             <div className="relative flex items-center justify-center">
               <div className={`sos-pulse absolute w-72 h-72 ${isSosActive ? 'animate-ping' : ''}`}></div>
-              <button 
+              <button
                 onClick={handleSosTrigger}
-                className="relative z-10 w-56 h-56 rounded-full bg-error flex items-center justify-center shadow-[0_0_60px_rgba(230,57,70,0.5)] hover:shadow-[0_0_80px_rgba(230,57,70,0.6)] active:scale-95 transition-all duration-300 group" 
+                className="relative z-10 w-56 h-56 rounded-full bg-error flex items-center justify-center shadow-[0_0_60px_rgba(230,57,70,0.5)] hover:shadow-[0_0_80px_rgba(230,57,70,0.6)] active:scale-95 transition-all duration-300 group"
                 id="sos-trigger"
               >
                 <span className="font-display-lg text-[64px] text-white tracking-widest font-bold group-hover:scale-105 transition-transform">
@@ -189,7 +190,7 @@ export default function Safety() {
 
             {/* Essential Status Display */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-xl">
-              
+
               {/* Live Status */}
               <div className={`glass-card p-6 rounded-xl flex items-center gap-5 transition-all duration-300 ${isSosActive ? 'border-error bg-error-container/10' : ''}`}>
                 <div className="relative">
@@ -200,17 +201,6 @@ export default function Safety() {
                   <span className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Protection Status</span>
                   <span className={`text-title-lg font-bold ${isSosActive ? 'text-error animate-pulse' : 'text-on-surface'}`}>
                     {isSosActive ? 'SOS ACTIVE' : 'Monitoring Active'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Satellite Connectivity */}
-              <div className="glass-card p-6 rounded-xl flex items-center gap-5">
-                <span className={`material-symbols-outlined text-[24px] ${isSosActive ? 'text-error animate-pulse' : 'text-primary'}`}>satellite_alt</span>
-                <div className="flex flex-col text-left">
-                  <span className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Signal Link</span>
-                  <span className="text-title-lg font-bold text-on-surface">
-                    {isSosActive ? 'SOS Link Live' : 'Secured via Satellite'}
                   </span>
                 </div>
               </div>
@@ -247,7 +237,7 @@ export default function Safety() {
                 A dedicated security console designed to keep you connected and protected, no matter how far you wander.
               </h1>
             </div>
-            
+
             <div className="space-y-6 pt-4">
               <div className="flex flex-wrap justify-center lg:justify-start gap-x-12 gap-y-6">
                 <div className="flex items-center gap-4">
@@ -266,13 +256,13 @@ export default function Safety() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
-              <button 
+              <button
                 onClick={() => setShowContactModal(true)}
                 className="bg-primary text-on-primary-fixed px-10 py-5 rounded-lg font-bold uppercase tracking-[0.15em] text-label-sm hover:bg-primary-container transition-all shadow-[0_4px_20px_rgba(245,166,35,0.2)]"
               >
                 Manage Safety Circles
               </button>
-              <button 
+              <button
                 onClick={() => setShowSettingsModal(true)}
                 className="border border-glass-stroke text-on-surface px-10 py-5 rounded-lg font-bold uppercase tracking-[0.15em] text-label-sm hover:bg-glass-fill transition-all"
               >
@@ -313,7 +303,7 @@ export default function Safety() {
                 <span className="material-symbols-outlined">group</span>
                 <span>Safety Circle Contacts</span>
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   const saved = localStorage.getItem("wandr_emergency_contacts");
                   if (saved) {
@@ -381,7 +371,7 @@ export default function Safety() {
                 <span className="material-symbols-outlined text-sm">person_add</span>
                 <span>Add Contact</span>
               </button>
-              
+
               <div className="flex gap-2">
                 <button
                   onClick={() => {
@@ -427,7 +417,7 @@ export default function Safety() {
                 <span className="material-symbols-outlined">settings</span>
                 <span>Security Settings</span>
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   const saved = localStorage.getItem("wandr_safety_settings");
                   if (saved) {
@@ -458,7 +448,7 @@ export default function Safety() {
 
               {/* Sync Interval */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-on-surface-variant font-semibold uppercase tracking-wider font-mono text-left">Satellite Sync Interval</label>
+                <label className="text-on-surface-variant font-semibold uppercase tracking-wider font-mono text-left">Sync Interval</label>
                 <select
                   value={settings.syncRate}
                   onChange={(e) => setSettings({ ...settings, syncRate: e.target.value })}
@@ -503,7 +493,7 @@ export default function Safety() {
 
                 <div className="flex items-center justify-between bg-surface-container-low/40 p-3 rounded-lg border border-glass-stroke">
                   <div className="flex flex-col text-left">
-                    <span className="font-semibold text-on-surface">SMS Satellite Fallback</span>
+                    <span className="font-semibold text-on-surface">SMS Fallback</span>
                     <span className="text-[10px] text-on-surface-variant">Send low-bandwidth SMS updates if internet drops</span>
                   </div>
                   <input
