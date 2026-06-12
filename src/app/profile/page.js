@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Profile() {
   const router = useRouter();
@@ -29,60 +30,115 @@ export default function Profile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [trustScore, setTrustScore] = useState(80);
+  const [idVerified, setIdVerified] = useState(false);
 
   useEffect(() => {
+    const supabase = createClient();
     verifyAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        verifyAuth();
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const verifyAuth = () => {
-    const loggedIn = localStorage.getItem("wandr_logged_in") === "true";
-    if (loggedIn) {
-      setIsLoggedIn(true);
-      setUserName(localStorage.getItem("wandr_username") || "Joshua D'Souza");
-      setUserEmail(localStorage.getItem("wandr_useremail") || "dsouzajoshuan@gmail.com");
+  const verifyAuth = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const user = session.user;
+        setIsLoggedIn(true);
+        setUserEmail(user.email);
 
-      // Load active trip
-      const hasTrip = localStorage.getItem("wandr_trip_planned") === "true";
-      if (hasTrip) {
-        setActiveTrip({
-          dest: localStorage.getItem("wandr_planned_destination") || "Ziro Valley Cultural Expedition",
-          days: localStorage.getItem("wandr_planned_days") || "3",
-          budget: localStorage.getItem("wandr_planned_budget") || "Explorer"
-        });
-      } else {
-        setActiveTrip(null);
-      }
+        // Load profile info from profiles table
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      // Load contacts
-      const savedContacts = JSON.parse(localStorage.getItem("wandr_emergency_contacts") || "[]");
-      setContacts(savedContacts);
-
-      // Load safety settings
-      const savedSettings = localStorage.getItem("wandr_safety_settings");
-      if (savedSettings) {
-        try {
-          setSafetySettings(JSON.parse(savedSettings));
-        } catch (e) {
-          console.warn("Failed to parse safety settings.", e);
+        if (profile) {
+          setUserName(profile.full_name || user.user_metadata?.full_name || "Traveler");
+          setTrustScore(profile.trust_score ?? 80);
+          setIdVerified(profile.id_verified ?? false);
+        } else {
+          setUserName(user.user_metadata?.full_name || "Traveler");
         }
+
+        // Load active trip
+        const hasTrip = localStorage.getItem("wandr_trip_planned") === "true";
+        if (hasTrip) {
+          setActiveTrip({
+            dest: localStorage.getItem("wandr_planned_destination") || "Ziro Valley Cultural Expedition",
+            days: localStorage.getItem("wandr_planned_days") || "3",
+            budget: localStorage.getItem("wandr_planned_budget") || "Explorer"
+          });
+        } else {
+          setActiveTrip(null);
+        }
+
+        // Load contacts
+        const savedContacts = JSON.parse(localStorage.getItem("wandr_emergency_contacts") || "[]");
+        setContacts(savedContacts);
+
+        // Load safety settings
+        const savedSettings = localStorage.getItem("wandr_safety_settings");
+        if (savedSettings) {
+          try {
+            setSafetySettings(JSON.parse(savedSettings));
+          } catch (e) {
+            console.warn("Failed to parse safety settings.", e);
+          }
+        }
+      } else {
+        setIsLoggedIn(false);
       }
-    } else {
+    } catch (err) {
+      console.error("verifyAuth error:", err);
       setIsLoggedIn(false);
     }
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    localStorage.setItem("wandr_username", "Joshua D'Souza");
-    localStorage.setItem("wandr_useremail", loginEmail || "dsouzajoshuan@gmail.com");
-    localStorage.setItem("wandr_userphone", "+91 98765 43210");
-    localStorage.setItem("wandr_logged_in", "true");
-    verifyAuth();
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (error) {
+        alert("Login failed: " + error.message);
+        return;
+      }
+
+      verifyAuth();
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("An unexpected error occurred during login.");
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("wandr_logged_in");
-    verifyAuth();
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setIsLoggedIn(false);
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
 
   const handleOpenEditModal = () => {
@@ -91,16 +147,49 @@ export default function Profile() {
     setShowEditModal(true);
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!editName.trim() || !editEmail.trim()) return;
 
-    localStorage.setItem("wandr_username", editName);
-    localStorage.setItem("wandr_useremail", editEmail);
-    setUserName(editName);
-    setUserEmail(editEmail);
-    setShowEditModal(false);
-    alert("Profile details updated successfully!");
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("Session expired. Please log in again.");
+        return;
+      }
+
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: editName,
+        })
+        .eq("id", user.id);
+
+      if (profileError) throw profileError;
+
+      // Update auth user email if changed
+      if (editEmail !== user.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: editEmail
+        });
+        if (authError) {
+          alert("Failed to update email in authentication: " + authError.message);
+        } else {
+          alert("Email update requested! Please check both your old and new inbox to confirm.");
+        }
+      }
+
+      setUserName(editName);
+      setUserEmail(editEmail);
+      setShowEditModal(false);
+      alert("Profile details updated successfully!");
+    } catch (err) {
+      console.error("Save profile error:", err);
+      alert("Failed to save profile changes.");
+    }
   };
 
   const handleAddContact = (e) => {
@@ -198,7 +287,12 @@ export default function Profile() {
                   <h2 className="font-headline-md text-3xl text-on-surface">{userName}</h2>
                   <p className="text-xs text-on-surface-variant font-mono">{userEmail}</p>
                   <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-                    <span className="bg-teal-trust/10 text-teal-trust border border-teal-trust/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">ID VETTED</span>
+                    <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">TRUST SCORE: {trustScore}</span>
+                    {idVerified ? (
+                      <span className="bg-teal-trust/10 text-teal-trust border border-teal-trust/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">ID VETTED</span>
+                    ) : (
+                      <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">ID UNVERIFIED</span>
+                    )}
                     <span className="bg-secondary/10 text-secondary border border-secondary/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">VOICE CHECKED</span>
                   </div>
                 </div>
