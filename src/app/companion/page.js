@@ -6,34 +6,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-const COMPANIONS_DATABASE = [
-  { id: "sneha", name: "Sneha K.", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 97, desc: "Looking for a trekking buddy in Spiti. Prefers local homestays. ID verified.", tags: ["Trekking", "Solo"], specialty: "Trekking", dest: "Spiti Valley (Himachal)" },
-  { id: "david", name: "David P.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop", trust: 98, fit: 91, desc: "High altitude trekking and camping enthusiast. Keen to check snow leopard trails.", tags: ["Adventure", "Trekking"], specialty: "Trekking", dest: "Spiti Valley (Himachal)" },
-  
-  { id: "rohan", name: "Rohan M.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 96, desc: "Focusing on heritage photography. Heading to Hampi next week. Verified government ID.", tags: ["Photography", "Solo"], specialty: "Photography", dest: "Hampi (Karnataka)" },
-  { id: "vikram", name: "Vikram S.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop", trust: 97, fit: 89, desc: "Exploring ancient monolith architecture and local markets. Happy to pool cab fares.", tags: ["History", "Budget-share"], specialty: "Budget-share", dest: "Hampi (Karnataka)" },
-  
-  { id: "priya", name: "Priya S.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 94, desc: "Looking to pool taxi costs and explore living root bridges. Voice verified companion.", tags: ["Trekking", "Budget-share"], specialty: "Trekking", dest: "Shillong (Meghalaya)" },
-  { id: "rahul", name: "Rahul R.", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop", trust: 96, fit: 88, desc: "Jungle trekking and waterfall photography. Deep interest in local Khasi foods.", tags: ["Nature", "Culture"], specialty: "Culture", dest: "Shillong (Meghalaya)" },
-  
-  { id: "karan", name: "Karan D.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 91, desc: "Exploring remote villages and local cuisines. Booking shared homestays. ID verified.", tags: ["Culture", "Foodie"], specialty: "Culture", dest: "Ziro (Arunachal)" },
-  { id: "jessica", name: "Jessica L.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop", trust: 99, fit: 92, desc: "Documentary photographer capturing tribal communities and bamboo structures.", tags: ["Photography", "Solo"], specialty: "Photography", dest: "Ziro (Arunachal)" },
-  
-  { id: "amit", name: "Amit P.", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 89, desc: "Sharing a private cab from Leh to Nubra Valley. Splitting expenses equally.", tags: ["Budget-share", "Adventurer"], specialty: "Budget-share", dest: "Leh Wilderness (Ladakh)" },
-  { id: "sophia", name: "Sophia W.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop", trust: 98, fit: 93, desc: "Backpacking across high-altitude cold deserts and capturing landscape media loops.", tags: ["Adventure", "Photography"], specialty: "Photography", dest: "Leh Wilderness (Ladakh)" },
-  
-  { id: "anjali", name: "Anjali T.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 92, desc: "Misty tea estate walks, bird watching, and botanical photography. Staying at eco-lodges.", tags: ["Leisure", "Nature"], specialty: "Leisure", dest: "Munnar (Kerala)" },
-  { id: "matthew", name: "Matthew G.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop", trust: 95, fit: 86, desc: "Splitting transport costs around Kolukkumalai estates. Food enthusiast.", tags: ["Leisure", "Budget-share"], specialty: "Budget-share", dest: "Munnar (Kerala)" },
 
-  { id: "chloe", name: "Chloe B.", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 95, desc: "Enjoying the Aegean Sanctuary cruise, luxury transfers, and caldera sunsets.", tags: ["Luxury", "Leisure"], specialty: "Leisure", dest: "Santorini (Greece)" },
-  { id: "marcus", name: "Marcus A.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop", trust: 99, fit: 91, desc: "Capturing sunset landscape photography on high-end luxury cruises.", tags: ["Photography", "Luxury"], specialty: "Photography", dest: "Santorini (Greece)" },
-
-  { id: "hans", name: "Hans S.", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 94, desc: "Trekking through the Bernese Oberland peaks and exploring hidden alpine glacier lakes.", tags: ["Adventure", "Trekking"], specialty: "Trekking", dest: "Swiss Alps (Switzerland)" },
-  { id: "clara", name: "Clara V.", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop", trust: 97, fit: 89, desc: "Backpacking across Switzerland. Seeking to share premium peak rail passes.", tags: ["Leisure", "Adventure"], specialty: "Leisure", dest: "Swiss Alps (Switzerland)" },
-
-  { id: "elena", name: "Elena M.", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop", trust: 100, fit: 96, desc: "Immersing in lagoon history, classical architecture, and art galleries. Seeking a fellow culture enthusiast.", tags: ["Culture", "Photography"], specialty: "Culture", dest: "Venice (Italy)" },
-  { id: "francesco", name: "Francesco B.", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop", trust: 98, fit: 90, desc: "Exploring floating canal secrets, local seafood dining, and private lagoon routes.", tags: ["Foodie", "Culture"], specialty: "Culture", dest: "Venice (Italy)" }
-];
 
 export default function Companion() {
   const router = useRouter();
@@ -59,8 +32,11 @@ export default function Companion() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  const [companionsList, setCompanionsList] = useState([]);
+
   useEffect(() => {
     verifyLock();
+    loadCompanionsData();
   }, []);
 
   const verifyLock = () => {
@@ -72,6 +48,85 @@ export default function Companion() {
     setPlannedDest(dest || "All Destinations");
   };
 
+  const loadCompanionsData = async () => {
+    try {
+      const destRes = await fetch("/api/destinations");
+      const destData = await destRes.json();
+      const destinations = destData.success ? destData.data : [];
+
+      const compRes = await fetch("/api/companions");
+      const compData = await compRes.json();
+      const companions = compData.success ? compData.data : [];
+
+      const mapped = companions.map(c => {
+        const matchingDest = destinations.find(d => d.id === c.current_destination_id);
+        const destTitle = matchingDest ? `${matchingDest.title} (${matchingDest.country})` : "Remote Location";
+        return {
+          id: c.id,
+          name: c.full_name || "Traveler",
+          image: c.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          trust: c.trust_score ?? 80,
+          fit: 90 + ((c.trust_score ?? 80) % 10),
+          desc: c.bio || "No bio available.",
+          tags: c.tags || [],
+          specialty: c.specialty || "Explorer",
+          dest: destTitle
+        };
+      });
+
+      const hardcodedCompanions = [
+        {
+          id: "11111111-1111-1111-1111-111111111111",
+          name: "Aria Sterling",
+          image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop",
+          trust: 98,
+          fit: 96,
+          desc: "Expert mountain trekker & photographer. Looking for adventurous souls.",
+          tags: ["Trekking", "Photography", "Mountains"],
+          specialty: "Adventure",
+          dest: "Spiti Valley (India)"
+        },
+        {
+          id: "22222222-2222-2222-2222-222222222222",
+          name: "Liam Chen",
+          image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          trust: 92,
+          fit: 94,
+          desc: "Cultural history enthusiast. Slow travel is my vibe.",
+          tags: ["History", "Culture", "Local Food"],
+          specialty: "Culture",
+          dest: "Hampi (India)"
+        },
+        {
+          id: "33333333-3333-3333-3333-333333333333",
+          name: "Maya Patel",
+          image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          trust: 95,
+          fit: 98,
+          desc: "Nature lover and wellness seeker. Early riser for the best views.",
+          tags: ["Nature", "Wellness", "Hiking"],
+          specialty: "Wellness",
+          dest: "Ziro Valley (India)"
+        },
+        {
+          id: "44444444-4444-4444-4444-444444444444",
+          name: "Julian Cross",
+          image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          trust: 89,
+          fit: 91,
+          desc: "Urban explorer and foodie. Let's find the best street food.",
+          tags: ["Food", "City Walk", "Nightlife"],
+          specialty: "Culinary",
+          dest: "Delhi (India)"
+        }
+      ];
+
+      setCompanionsList([...mapped, ...hardcodedCompanions]);
+    } catch (err) {
+      console.error("Failed to load companions data:", err);
+    }
+  };
+
   const resetTrip = () => {
     localStorage.removeItem("wandr_trip_planned");
     localStorage.removeItem("wandr_planned_destination");
@@ -79,11 +134,11 @@ export default function Companion() {
   };
 
   const getFilteredCompanions = () => {
-    let list = COMPANIONS_DATABASE;
+    let list = companionsList;
 
     if (isTripPlanned && userPlannedDest) {
       const destLower = userPlannedDest.toLowerCase();
-      list = COMPANIONS_DATABASE.filter(c => {
+      list = list.filter(c => {
         const compDest = c.dest.toLowerCase();
         if (destLower.includes("ziro") && compDest.includes("ziro")) return true;
         if (destLower.includes("spiti") && compDest.includes("spiti")) return true;
@@ -138,12 +193,32 @@ export default function Companion() {
     }
   };
 
-  const triggerSwipeAction = (isLike) => {
+  const triggerSwipeAction = async (isLike) => {
     const companion = activeCompanion;
-    if (isLike && companion) {
-      setTimeout(() => {
-        startConversation(companion);
-      }, 300);
+    if (companion) {
+      try {
+        // 1. Ensure the match row exists in DB
+        await fetch("/api/companions/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companion_id: companion.id })
+        });
+
+        // 2. Register swipe status
+        await fetch(`/api/companions/${companion.id}/swipe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: isLike ? "like" : "pass" })
+        });
+      } catch (err) {
+        console.error("Swipe API error:", err);
+      }
+
+      if (isLike) {
+        setTimeout(() => {
+          startConversation(companion);
+        }, 300);
+      }
     }
     
     setDragOffset(0);
@@ -159,7 +234,7 @@ export default function Companion() {
     setActiveTab("chats");
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
     if (!chatInput.trim() || !chatUser) return;
 
@@ -167,45 +242,79 @@ export default function Companion() {
     setChatMessages((prev) => [...prev, { sender: "me", text: userText }]);
     setChatInput("");
 
-    setTimeout(() => {
+    try {
+      const history = chatMessages
+        .filter(m => m.sender !== "system")
+        .map(m => ({
+          role: m.sender === "me" ? "user" : "model",
+          content: m.text
+        }));
+
+      const response = await fetch("/api/companion-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userText,
+          companion_id: chatUser.id,
+          history: history
+        })
+      });
+
+      const res = await response.json();
+      const aiResponseText = res.success ? (res.data?.reply || res.reply) : "I'm offline right now. Let's connect inside the safety grid later!";
+
       setChatMessages((prev) => [
         ...prev,
-        { sender: "them", text: "That sounds great! Let's connect over voice check inside the app safety grid first to finalize timing." }
+        { sender: "them", text: aiResponseText }
       ]);
-    }, 1500);
+    } catch (err) {
+      console.error("Companion chat error:", err);
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: "them", text: "I'm offline right now. Let's connect inside the safety grid later!" }
+      ]);
+    }
   };
 
-  const handleSendAiMessage = (e) => {
-    if (e) e.preventDefault();
-    if (!aiInput.trim()) return;
+  const handleSendAiMessage = async (e, directText = "") => {
+    if (e && e.preventDefault) e.preventDefault();
+    const userText = directText || aiInput;
+    if (!userText.trim()) return;
 
-    const userText = aiInput;
     setAiMessages((prev) => [...prev, { sender: "me", text: userText }]);
     setAiInput("");
     setAiIsTyping(true);
 
-    setTimeout(() => {
-      setAiIsTyping(false);
-      let reply = `To find companions, ensure your itinerary is locked. We match based on tags such as "Trekking", "Photography", "Culture", and "Budget-share". Let me know if you want to know more about our trust score.`;
-      
-      const query = userText.toLowerCase();
-      if (query.includes("trust") || query.includes("score") || query.includes("verify") || query.includes("verified")) {
-        reply = `Our Trust Score evaluates ID checks, phone logs, and traveler reviews. Verified profiles carry a badge indicating government ID and facial biometrics are validated.`;
-      } else if (query.includes("safety") || query.includes("zone") || query.includes("emergency") || query.includes("sos")) {
-        reply = `Meets are restricted to Wandr Zones (verified local partner cafes/hotels). Safety Shield monitoring keeps emergency contacts in the loop during active segments.`;
-      } else if (query.includes("tag") || query.includes("specialty") || query.includes("filter")) {
-        reply = `We support filters for Trekking, Photography, Culture, and Budget-share. Matching travelers must align on at least one specialty tag.`;
-      }
+    try {
+      const history = aiMessages.map(m => ({
+        role: m.sender === "me" ? "user" : "model",
+        content: m.text
+      }));
+
+      const response = await fetch("/api/companion-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userText,
+          history: history
+        })
+      });
+
+      const res = await response.json();
+      const reply = res.success ? (res.data?.reply || res.reply) : "I am having trouble answering right now. Please try again.";
 
       setAiMessages((prev) => [...prev, { sender: "them", text: reply }]);
-    }, 1200);
+    } catch (err) {
+      console.error("Match AI Guide error:", err);
+      setAiMessages((prev) => [...prev, { sender: "them", text: "I am having trouble answering right now. Please try again." }]);
+    } finally {
+      setAiIsTyping(false);
+    }
   };
 
   const handleAiSuggestion = (query) => {
     setAiInput(query);
-    setTimeout(() => {
-      handleSendAiMessage();
-    }, 50);
+    handleSendAiMessage(null, query);
   };
 
   return (

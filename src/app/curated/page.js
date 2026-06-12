@@ -2,13 +2,14 @@
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const JOURNEY_LIST = [
   {
     id: "aegean",
     title: "Aegean Sanctuary",
+    location: "Santorini, Greece",
     price: "₹4,45,000",
     days: "8",
     description: "Experience 8 days of pure luxury in Santorini. Includes private cliffside transfers, catamaran cruises, and Michelin-star dining overlooking the caldera.",
@@ -20,6 +21,7 @@ const JOURNEY_LIST = [
   {
     id: "alpine",
     title: "Alpine Mystique",
+    location: "Bernese Oberland, Switzerland",
     price: "₹2,45,000",
     days: "5",
     description: "A high-altitude escape through the heart of the Bernese Oberland, featuring luxury peaks, hidden lakes, and world-class hospitality in the Swiss Alps.",
@@ -31,6 +33,7 @@ const JOURNEY_LIST = [
   {
     id: "venetian",
     title: "Venetian Echoes",
+    location: "Venice, Italy",
     price: "₹1,85,000",
     days: "6",
     description: "Immerse yourself in the art, history, and culinary secrets of the floating city with private gondola access and exclusive lagoon tours.",
@@ -43,6 +46,18 @@ const JOURNEY_LIST = [
 
 export default function CuratedJourneys() {
   const router = useRouter();
+
+  const [selectedBudgets, setSelectedBudgets] = useState({
+    aegean: "Explorer",
+    alpine: "Explorer",
+    venetian: "Explorer"
+  });
+
+  const [activeViews, setActiveViews] = useState({
+    aegean: "image",
+    alpine: "image",
+    venetian: "image"
+  });
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -59,17 +74,46 @@ export default function CuratedJourneys() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  const getPrice = (id, basePriceStr) => {
+    const basePrice = parseInt(basePriceStr.replace(/[^0-9]/g, ""), 10);
+    const tier = selectedBudgets[id] || "Explorer";
+    let calculated = basePrice;
+    if (tier === "Elite") {
+      calculated += 150000;
+    } else if (tier === "Royal") {
+      calculated += 350000;
+    }
+    return `₹${calculated.toLocaleString("en-IN")}`;
+  };
+
+  const handleBudgetChange = (id, tier) => {
+    setSelectedBudgets(prev => ({
+      ...prev,
+      [id]: tier
+    }));
+  };
+
+  const toggleView = (id, view) => {
+    setActiveViews(prev => ({
+      ...prev,
+      [id]: view
+    }));
+  };
+
   const handleBookNow = (journey) => {
+    const finalPrice = getPrice(journey.id, journey.price);
+    const selectedTier = selectedBudgets[journey.id] || "Explorer";
+    
     localStorage.setItem("wandr_trip_planned", "true");
-    localStorage.setItem("wandr_planned_destination", journey.title);
+    localStorage.setItem("wandr_planned_destination", `${journey.title} (${selectedTier})`);
     localStorage.setItem("wandr_planned_days", journey.days);
-    localStorage.setItem("wandr_planned_budget", journey.price);
+    localStorage.setItem("wandr_planned_budget", finalPrice);
     
     router.push("/orchestrator");
   };
 
   const handleViewDetails = (title) => {
-    // Details action
+    alert(`Showing luxury package details for ${title}. Daily VIP concierge itinerary maps locked.`);
   };
 
   return (
@@ -95,17 +139,47 @@ export default function CuratedJourneys() {
           {JOURNEY_LIST.map((journey) => (
             <div
               key={journey.id}
-              className="glass-card rounded-xl overflow-hidden group cursor-pointer hover:border-primary/40 transition-all duration-500"
+              className="glass-card rounded-xl overflow-hidden group hover:border-primary/40 transition-all duration-500"
             >
               <div className="flex flex-col md:flex-row">
-                <div className="relative h-64 md:h-auto md:w-1/3 min-h-[220px]">
-                  <img
-                    alt={journey.alt}
-                    className="w-full h-full object-cover"
-                    src={journey.image}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-surface-container-lowest/60 to-transparent"></div>
-                  <div className="absolute bottom-4 left-4">
+                {/* Media Container */}
+                <div className="relative h-64 md:h-auto md:w-1/3 min-h-[260px] bg-[#0b0e14]">
+                  {/* View Toggles (Image / Map) */}
+                  <div className="absolute top-4 left-4 z-20 flex gap-1 bg-black/60 backdrop-blur-md p-0.5 rounded-full border border-glass-stroke shadow-lg">
+                    {["image", "map"].map((view) => (
+                      <button
+                        key={view}
+                        type="button"
+                        onClick={() => toggleView(journey.id, view)}
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider cursor-pointer border-none uppercase ${
+                          activeViews[journey.id] === view
+                            ? "bg-primary text-on-primary"
+                            : "text-on-surface-variant hover:text-on-surface bg-transparent"
+                        }`}
+                      >
+                        {view}
+                      </button>
+                    ))}
+                  </div>
+
+                  {activeViews[journey.id] === "map" ? (
+                    <iframe
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(journey.location)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
+                      className="w-full h-full border-none opacity-85"
+                      style={{ filter: "invert(90%) hue-rotate(180deg) contrast(110%) saturate(70%)" }}
+                      allowFullScreen=""
+                      loading="lazy"
+                    ></iframe>
+                  ) : (
+                    <img
+                      alt={journey.alt}
+                      className="w-full h-full object-cover transition-transform duration-750 group-hover:scale-102"
+                      src={journey.image}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-surface-container-lowest/60 to-transparent pointer-events-none"></div>
+                  
+                  <div className="absolute bottom-4 left-4 pointer-events-none">
                     {journey.isRecommended ? (
                       <span className="bg-primary/20 text-primary px-3 py-1 rounded-full font-label-sm text-label-sm border border-primary/30 backdrop-blur-md flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -120,14 +194,41 @@ export default function CuratedJourneys() {
                     )}
                   </div>
                 </div>
+
+                {/* Details Container */}
                 <div className="p-8 flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="font-headline-md text-2xl text-on-surface">{journey.title}</h3>
-                      <span className="font-title-lg text-primary">{journey.price}</span>
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                      <div>
+                        <h3 className="font-headline-md text-2xl text-on-surface font-bold">{journey.title}</h3>
+                        <span className="text-[10px] font-mono tracking-wider text-teal-trust font-bold uppercase">{journey.days} Days Package</span>
+                      </div>
+                      <span className="font-title-lg text-primary text-2xl font-bold">{getPrice(journey.id, journey.price)}</span>
                     </div>
-                    <p className="text-on-surface-variant text-body-md font-body-md mb-6">{journey.description}</p>
+                    <p className="text-on-surface-variant text-body-md font-body-md mb-6 leading-relaxed">{journey.description}</p>
+
+                    {/* Budget Selectors */}
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="text-[10px] font-bold text-on-surface-variant font-mono uppercase tracking-wider">Tier:</span>
+                      <div className="flex gap-1 bg-surface-container-low p-0.5 rounded-full border border-glass-stroke">
+                        {["Explorer", "Elite", "Royal"].map((tier) => (
+                          <button
+                            key={tier}
+                            type="button"
+                            onClick={() => handleBudgetChange(journey.id, tier)}
+                            className={`px-3.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer border-none transition-all ${
+                              selectedBudgets[journey.id] === tier
+                                ? "bg-primary text-on-primary font-bold shadow-sm"
+                                : "text-on-surface-variant hover:text-on-surface bg-transparent"
+                            }`}
+                          >
+                            {tier}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+
                   <div className="flex gap-4 items-center">
                     <button
                       onClick={() => handleViewDetails(journey.title)}
@@ -137,7 +238,7 @@ export default function CuratedJourneys() {
                     </button>
                     <button
                       onClick={() => handleBookNow(journey)}
-                      className="bg-primary text-on-primary px-6 py-2 rounded-full font-title-lg text-sm hover:shadow-[0_0_20px_rgba(255,200,128,0.3)] transition-all cursor-pointer border-none outline-none"
+                      className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-title-lg text-sm hover:shadow-[0_0_20px_rgba(255,200,128,0.3)] transition-all cursor-pointer border-none outline-none font-semibold"
                     >
                       Book Now
                     </button>

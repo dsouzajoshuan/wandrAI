@@ -87,29 +87,55 @@ export default function Safety() {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  const handleSosTrigger = () => {
-    const confirmSOS = confirm('Activate SOS Emergency Services? Your contacts and local emergency responders will be alerted immediately.');
-    if (confirmSOS) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            setUserLat(lat);
-            setUserLng(lng);
-            setIsSosActive(true);
-            alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\nCoordinates sent:\nLAT: ${lat.toFixed(4)}°\nLON: ${lng.toFixed(4)}°`);
-          },
-          (error) => {
-            console.warn("Geolocation failed during SOS.", error);
-            setIsSosActive(true);
-            alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\n(Fallback coordinates: LAT: ${userLat.toFixed(4)}°, LON: ${userLng.toFixed(4)}°)`);
-          }
-        );
-      } else {
-        setIsSosActive(true);
-        alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\n(Fallback coordinates: LAT: ${userLat.toFixed(4)}°, LON: ${userLng.toFixed(4)}°)`);
+  const handleSosTrigger = async () => {
+    setIsSosActive(true);
+    
+    const sendN8nAlert = async (lat, lng, addressText = "") => {
+      try {
+        await fetch("/api/safety/n8n", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng, addressText })
+        });
+      } catch (err) {
+        console.error("N8n SOS failed:", err);
       }
+    };
+
+    const triggerSOS = (lat, lng, addressText = "") => {
+      setUserLat(lat);
+      setUserLng(lng);
+      sendN8nAlert(lat, lng, addressText);
+      alert(`SOS ACTIVATED. Dispatching location to emergency services.\n\nLocation sent:\nLAT: ${lat.toFixed(4)}°\nLON: ${lng.toFixed(4)}°\n${addressText}`);
+    };
+
+    const handleFallbackLocation = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data && data.latitude && data.longitude) {
+          triggerSOS(data.latitude, data.longitude, `${data.city}, ${data.region}, ${data.country_name}`);
+        } else {
+          throw new Error("IP Geolocation failed");
+        }
+      } catch (e) {
+        triggerSOS(userLat, userLng, "Fallback Location");
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          triggerSOS(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn("Geolocation failed during SOS.", error);
+          handleFallbackLocation();
+        },
+        { timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      handleFallbackLocation();
     }
   };
 

@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Signup() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [consent, setConsent] = useState(false);
 
-  const handleSignupSubmit = (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
 
     if (!consent) {
@@ -22,13 +23,30 @@ export default function Signup() {
       return;
     }
 
-    localStorage.setItem("wandr_username", name);
-    localStorage.setItem("wandr_useremail", email);
-    localStorage.setItem("wandr_userphone", phone);
-    localStorage.setItem("wandr_logged_in", "true");
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            phone: phone,
+          },
+        },
+      });
 
-    alert("Account successfully configured! Redirecting to user profile dashboard.");
-    router.push("/profile");
+      if (error) {
+        alert("Registration failed: " + error.message);
+        return;
+      }
+
+      alert("Account successfully configured! Redirecting to user profile dashboard.");
+      router.push("/profile");
+    } catch (err) {
+      console.error("Signup error:", err);
+      alert("An unexpected error occurred during signup.");
+    }
   };
 
   return (

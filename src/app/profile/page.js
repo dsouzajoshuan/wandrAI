@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Profile() {
   const router = useRouter();
@@ -29,60 +30,118 @@ export default function Profile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [trustScore, setTrustScore] = useState(80);
+  const [idVerified, setIdVerified] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
+    const supabase = createClient();
     verifyAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        verifyAuth();
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const verifyAuth = () => {
-    const loggedIn = localStorage.getItem("wandr_logged_in") === "true";
-    if (loggedIn) {
-      setIsLoggedIn(true);
-      setUserName(localStorage.getItem("wandr_username") || "Joshua D'Souza");
-      setUserEmail(localStorage.getItem("wandr_useremail") || "dsouzajoshuan@gmail.com");
+  const verifyAuth = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const user = session.user;
+        setIsLoggedIn(true);
+        setUserEmail(user.email);
 
-      // Load active trip
-      const hasTrip = localStorage.getItem("wandr_trip_planned") === "true";
-      if (hasTrip) {
-        setActiveTrip({
-          dest: localStorage.getItem("wandr_planned_destination") || "Ziro Valley Cultural Expedition",
-          days: localStorage.getItem("wandr_planned_days") || "3",
-          budget: localStorage.getItem("wandr_planned_budget") || "Explorer"
-        });
-      } else {
-        setActiveTrip(null);
-      }
+        // Load profile info from profiles table
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      // Load contacts
-      const savedContacts = JSON.parse(localStorage.getItem("wandr_emergency_contacts") || "[]");
-      setContacts(savedContacts);
-
-      // Load safety settings
-      const savedSettings = localStorage.getItem("wandr_safety_settings");
-      if (savedSettings) {
-        try {
-          setSafetySettings(JSON.parse(savedSettings));
-        } catch (e) {
-          console.warn("Failed to parse safety settings.", e);
+        if (profile) {
+          setUserName(profile.full_name || user.user_metadata?.full_name || "Traveler");
+          setTrustScore(profile.trust_score ?? 80);
+          setIdVerified(profile.id_verified ?? false);
+          setAvatarUrl(profile.avatar_url || user.user_metadata?.avatar_url || "");
+        } else {
+          setUserName(user.user_metadata?.full_name || "Traveler");
+          setAvatarUrl(user.user_metadata?.avatar_url || "");
         }
+
+        // Load active trip
+        const hasTrip = localStorage.getItem("wandr_trip_planned") === "true";
+        if (hasTrip) {
+          setActiveTrip({
+            dest: localStorage.getItem("wandr_planned_destination") || "Ziro Valley Cultural Expedition",
+            days: localStorage.getItem("wandr_planned_days") || "3",
+            budget: localStorage.getItem("wandr_planned_budget") || "Explorer"
+          });
+        } else {
+          setActiveTrip(null);
+        }
+
+        // Load contacts
+        const savedContacts = JSON.parse(localStorage.getItem("wandr_emergency_contacts") || "[]");
+        setContacts(savedContacts);
+
+        // Load safety settings
+        const savedSettings = localStorage.getItem("wandr_safety_settings");
+        if (savedSettings) {
+          try {
+            setSafetySettings(JSON.parse(savedSettings));
+          } catch (e) {
+            console.warn("Failed to parse safety settings.", e);
+          }
+        }
+      } else {
+        setIsLoggedIn(false);
       }
-    } else {
+    } catch (err) {
+      console.error("verifyAuth error:", err);
       setIsLoggedIn(false);
     }
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    localStorage.setItem("wandr_username", "Joshua D'Souza");
-    localStorage.setItem("wandr_useremail", loginEmail || "dsouzajoshuan@gmail.com");
-    localStorage.setItem("wandr_userphone", "+91 98765 43210");
-    localStorage.setItem("wandr_logged_in", "true");
-    verifyAuth();
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (error) {
+        alert("Login failed: " + error.message);
+        return;
+      }
+
+      verifyAuth();
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("An unexpected error occurred during login.");
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("wandr_logged_in");
-    verifyAuth();
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setIsLoggedIn(false);
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
 
   const handleOpenEditModal = () => {
@@ -91,16 +150,98 @@ export default function Profile() {
     setShowEditModal(true);
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!editName.trim() || !editEmail.trim()) return;
 
-    localStorage.setItem("wandr_username", editName);
-    localStorage.setItem("wandr_useremail", editEmail);
-    setUserName(editName);
-    setUserEmail(editEmail);
-    setShowEditModal(false);
-    alert("Profile details updated successfully!");
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("Session expired. Please log in again.");
+        return;
+      }
+
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: editName,
+        })
+        .eq("id", user.id);
+
+      if (profileError) throw profileError;
+
+      // Update auth user email if changed
+      if (editEmail !== user.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: editEmail
+        });
+        if (authError) {
+          alert("Failed to update email in authentication: " + authError.message);
+        } else {
+          alert("Email update requested! Please check both your old and new inbox to confirm.");
+        }
+      }
+
+      setUserName(editName);
+      setUserEmail(editEmail);
+      setShowEditModal(false);
+      alert("Profile details updated successfully!");
+    } catch (err) {
+      console.error("Save profile error:", err);
+      alert("Failed to save profile changes.");
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Session expired. Please log in again.");
+        return;
+      }
+
+      // 1. Ensure bucket 'avatars' exists (attempt creation, ignore if already exists)
+      await supabase.storage.createBucket("avatars", {
+        public: true,
+        fileSizeLimit: 2097152, // 2MB
+      }).catch(() => {}); // ignore error if bucket already exists
+
+      // 2. Upload file
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+
+      const { data, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // 3. Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      // 4. Update profile in profiles table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      alert("Profile picture updated successfully!");
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      alert("Failed to upload profile picture: " + err.message);
+    }
   };
 
   const handleAddContact = (e) => {
@@ -190,15 +331,34 @@ export default function Profile() {
             <div className="glass-card rounded-2xl border border-glass-stroke p-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl relative overflow-hidden w-full">
               <div className="absolute -top-12 -left-12 bg-primary/5 w-60 h-60 rounded-full blur-3xl pointer-events-none"></div>
               <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                <div className="relative">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" className="w-24 h-24 rounded-full object-cover border-2 border-primary shadow-md"/>
+                <div className="relative group/avatar cursor-pointer">
+                  <img 
+                    src={avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop"} 
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary shadow-md"
+                    alt="User Avatar"
+                  />
+                  <label htmlFor="avatar-file-input" className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer">
+                    <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="avatar-file-input"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
                   <span className="absolute bottom-1 right-1 w-5 h-5 bg-teal-trust border-2 border-surface-container rounded-full flex items-center justify-center text-[10px] text-white">✓</span>
                 </div>
                 <div className="text-center md:text-left space-y-1">
                   <h2 className="font-headline-md text-3xl text-on-surface">{userName}</h2>
                   <p className="text-xs text-on-surface-variant font-mono">{userEmail}</p>
                   <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-                    <span className="bg-teal-trust/10 text-teal-trust border border-teal-trust/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">ID VETTED</span>
+                    <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">TRUST SCORE: {trustScore}</span>
+                    {idVerified ? (
+                      <span className="bg-teal-trust/10 text-teal-trust border border-teal-trust/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">ID VETTED</span>
+                    ) : (
+                      <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">ID UNVERIFIED</span>
+                    )}
                     <span className="bg-secondary/10 text-secondary border border-secondary/20 px-3 py-0.5 rounded-full text-[9px] font-mono tracking-wider">VOICE CHECKED</span>
                   </div>
                 </div>

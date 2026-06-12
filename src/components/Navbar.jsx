@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,6 +20,22 @@ export default function Navbar() {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
@@ -84,9 +102,11 @@ export default function Navbar() {
           <Link href="/profile" className="text-on-surface-variant font-title-lg text-[15px] hover:text-primary transition-colors px-3 py-1">
             Profile
           </Link>
-          <Link href="/signup" className="bg-primary-container text-on-primary-container px-5 py-2 rounded-lg font-title-lg text-[14px] hover:scale-95 active:opacity-80 transition-all shadow-md">
-            Sign Up
-          </Link>
+          {!isLoggedIn && (
+            <Link href="/signup" className="bg-primary-container text-on-primary-container px-5 py-2 rounded-lg font-title-lg text-[14px] hover:scale-95 active:opacity-80 transition-all shadow-md">
+              Sign Up
+            </Link>
+          )}
         </div>
       </div>
     </header>
