@@ -137,7 +137,7 @@ export default function TripOrchestrator() {
     }
   }, [messages, isTyping]);
 
-  const handleSendMessage = (text = inputValue) => {
+  const handleSendMessage = async (text = inputValue) => {
     const messageContent = typeof text === "string" ? text.trim() : inputValue.trim();
     if (!messageContent) return;
 
@@ -148,24 +148,44 @@ export default function TripOrchestrator() {
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    
     if (typeof text !== "string" || text === inputValue) {
       setInputValue("");
     }
     setIsTyping(true);
 
-    setTimeout(() => {
-      setIsTyping(false);
-      let aiResponseText = `I have received your request regarding "${messageContent}". I am actively syncing coordinates with regional coordinators.`;
-      
-      const query = messageContent.toLowerCase();
-      if (query.includes("weather") || query.includes("temperature")) {
-        aiResponseText = `Current local weather at your destination looks excellent. It is estimated to range between 18°C and 23°C with clear skies.`;
-      } else if (query.includes("diet") || query.includes("food") || query.includes("preference")) {
-        aiResponseText = `Understood. Your special culinary profile and dietary requirements have been successfully registered with our local gourmet partners.`;
-      } else if (query.includes("transport") || query.includes("driver") || query.includes("taxi")) {
-        aiResponseText = `All airport and inner-city private driver arrangements are verified. The vehicle will stand by at your lobby exactly 15 minutes before the departure window.`;
+    try {
+      const history = updatedMessages.map(m => ({
+        role: m.role === "assistant" || m.role === "model" ? "model" : "user",
+        content: m.content
+      }));
+
+      const tripId = localStorage.getItem("wandr_trip_id");
+      let response;
+      if (tripId) {
+        response = await fetch("/api/orchestrator/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: messageContent,
+            trip_id: tripId,
+            history: history.slice(0, -1)
+          })
+        });
+      } else {
+        response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: history
+          })
+        });
       }
+
+      const res = await response.json();
+      const aiResponseText = res.success ? (res.data?.reply || res.reply) : (res.reply || "I am having trouble answering right now. Please try again.");
 
       setMessages((prev) => [
         ...prev,
@@ -176,10 +196,15 @@ export default function TripOrchestrator() {
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         }
       ]);
-    }, 1500);
+    } catch (err) {
+      console.error("Orchestrator AI error:", err);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleSuggestionClick = (query) => {
+    setInputValue(query);
     handleSendMessage(query);
   };
 
@@ -195,12 +220,25 @@ export default function TripOrchestrator() {
     if (confirmSOS) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             setUserLat(lat);
             setUserLng(lng);
             setIsSosActive(true);
+
+            const tripId = localStorage.getItem("wandr_trip_id");
+            if (tripId) {
+              try {
+                await fetch("/api/safety/sos", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ trip_id: tripId, lat, lng })
+                });
+              } catch (err) {
+                console.error("SOS API error:", err);
+              }
+            }
             alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\nCoordinates sent:\nLAT: ${lat.toFixed(4)}°\nLON: ${lng.toFixed(4)}°`);
           },
           (error) => {

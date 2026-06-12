@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateOllamaResponse } from "@/lib/ollama";
 
 const WANDR_SYSTEM_PROMPT = `You are the official AI assistant for Wandr AI — a luxury AI-powered travel platform.
 
@@ -65,33 +65,15 @@ export async function POST(request) {
       return Response.json({ error: "Invalid request body." }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return Response.json(
-        { error: "API key not configured." },
-        { status: 500 }
-      );
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: WANDR_SYSTEM_PROMPT,
-    });
-
-    // Convert message history to Gemini format (exclude the latest user message)
+    const latestUserMessage = messages[messages.length - 1].content;
     const history = messages.slice(0, -1).map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
+      role: msg.role === "assistant" ? "assistant" : "user",
+      content: msg.content,
     }));
 
-    const chat = model.startChat({ history });
+    const reply = await generateOllamaResponse(WANDR_SYSTEM_PROMPT, history, latestUserMessage);
 
-    const latestUserMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessage(latestUserMessage);
-    const responseText = result.response.text();
-
-    return Response.json({ reply: responseText });
+    return Response.json({ reply });
   } catch (error) {
     console.error("[Wandr Chat API Error]", error);
     return Response.json(

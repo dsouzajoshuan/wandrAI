@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { ok, fail } from '@/lib/api-response';
-import { generateGeminiResponse } from '@/lib/gemini';
+import { generateOllamaResponse } from '@/lib/ollama';
 import { orchestratorAiSchema } from '@/lib/validation/chat';
 
 export async function POST(request: NextRequest) {
@@ -71,8 +71,8 @@ Your Job:
 3. If they want to add/remove something, provide suggestions matching their luxury profile.
 4. Keep the voice elegant, premium, reassuring, and details-oriented. Never fabricate statuses.`;
 
-    // 4. Call Gemini
-    const reply = await generateGeminiResponse(systemPrompt, history, message);
+    // 4. Call Ollama
+    const reply = await generateOllamaResponse(systemPrompt, history, message);
 
     // 5. Log turns
     const { error: logError } = await supabase

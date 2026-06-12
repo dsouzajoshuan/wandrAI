@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { ok, fail } from '@/lib/api-response';
-import { generateGeminiResponse } from '@/lib/gemini';
+import { generateOllamaResponse } from '@/lib/ollama';
 import { aiChatRequestSchema } from '@/lib/validation/chat';
 
 const WANDR_SYSTEM_PROMPT = `You are the official AI assistant for Wandr AI — a luxury AI-powered travel platform.
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
 
     const { message, history = [] } = result.data;
 
-    // Call Gemini
-    const reply = await generateGeminiResponse(WANDR_SYSTEM_PROMPT, history, message);
+    // Call Ollama
+    const reply = await generateOllamaResponse(WANDR_SYSTEM_PROMPT, history, message);
 
     // Log turns to database
     const supabase = await createClient();

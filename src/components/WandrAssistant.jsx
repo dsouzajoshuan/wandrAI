@@ -130,6 +130,9 @@ export default function WandrAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: updatedMessages }),
       });
+      if (!response.ok) {
+        throw new Error("Chat API failed");
+      }
       const data = await response.json();
       const replyText =
         data.reply || "I could not find that information in the Wandr AI website content.";

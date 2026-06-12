@@ -269,3 +269,27 @@ insert into public.destinations (slug, title, country, cover_image, description)
 ('munnar', 'Munnar Valleys', 'India', 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2', 'Rolling hills of tea plantations and mist-filled valleys.'),
 ('santorini', 'Santorini', 'Greece', 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff', 'Sleek white architectures, blue domes, and stunning sunsets over the Aegean Sea.')
 on conflict (slug) do nothing;
+
+-- ==========================================
+-- 6. Storage Configuration
+-- ==========================================
+
+-- Allow public read access to avatars
+create policy "Allow public read access to avatars" on storage.objects
+  for select using (bucket_id = 'avatars');
+
+-- Allow authenticated users to upload avatars
+create policy "Allow authenticated uploads to avatars" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars');
+
+-- Allow authenticated users to update their own avatars
+create policy "Allow authenticated updates to avatars" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars');
+
+-- Allow authenticated users to delete their own avatars
+create policy "Allow authenticated deletions from avatars" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars');
+

@@ -5,98 +5,7 @@ import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const ITINERARY_DATA = {
-  ziro: {
-    title: "Ziro Valley Cultural Expedition",
-    3: [
-      { time: "09:00 AM", title: "Apatani Heritage Trail", desc: "Guided exploration of Hong village, interacting with local elders wearing traditional facial tattoos." },
-      { time: "01:30 PM", title: "Organic Farm Lunch", desc: "Savor traditional organic rice, bamboo shoot chicken, and home-brewed local beverages." },
-      { time: "04:00 PM", title: "Ziro Pine Forest Hike", desc: "Light trekking through the dense blue pine forests, capturing cinematic sunset perspectives." }
-    ],
-    5: [
-      { time: "Day 1 - 09:00 AM", title: "Heritage Village Trek", desc: "Walking tour of Hong and Hari, the primary Apatani cultural settlements." },
-      { time: "Day 2 - 10:30 AM", title: "Talley Valley Reserve Entry", desc: "Enter the remote rainforest sanctuary. Check-in logs updated via local satellite nodes." },
-      { time: "Day 3 - 02:00 PM", title: "Kile Pakto Viewpoint", desc: "Climb the ridge overlook. Visual coverage of the entire Ziro plateau landscape." },
-      { time: "Day 4 - 11:00 AM", title: "Local Craft Workshop", desc: "Session on traditional bamboo weaving and handloom textile work." },
-      { time: "Day 5 - 03:00 PM", title: "Wandr Zone Social Check-in", desc: "Join group debrief at Wandr Zone Base-02 for sharing media logs and transit arrangements." }
-    ]
-  },
-  spiti: {
-    title: "Spiti Valley High Altitude Trail",
-    3: [
-      { time: "08:00 AM", title: "Key Monastery Ascent", desc: "Early morning visit to the fortress-like monastery at 13,668ft for prayer assemblies." },
-      { time: "12:00 PM", title: "Kibber Wildlife Overlook", desc: "Trek high-altitude trails observing local fauna (snow leopard corridors)." },
-      { time: "04:30 PM", title: "Langza Fossil Hunting", desc: "Wander through marine fossil deposits dating back 200 million years (Tethys Sea)." }
-    ],
-    5: [
-      { time: "Day 1 - 10:00 AM", title: "Kaza Base Hub Entry", desc: "Acclimatize in local guest houses. Register tracking beacons with system terminal." },
-      { time: "Day 2 - 08:30 AM", title: "Key Monastery Study", desc: "Interact with local monks and analyze ancient murals and scriptures." },
-      { time: "Day 3 - 09:00 AM", title: "Highest Post Office (Hikkim)", desc: "Mail postcard dispatches. Secure entry details registered at check-in station." },
-      { time: "Day 4 - 01:00 PM", title: "Pin Valley Wilderness Trail", desc: "Trek through national reserve ecosystems bordered by glaciers." },
-      { time: "Day 5 - 04:00 PM", title: "Chandratal Lake Wilderness Camp", desc: "Set up camps alongside the crescent water bodies. SOS fail-safes switched to satellite band." }
-    ]
-  },
-  meghalaya: {
-    title: "Meghalaya Living Root Bridge Trail",
-    3: [
-      { time: "07:30 AM", title: "Tyrna Descent", desc: "Begin the 3,000-step stone trail hike towards the valley floor." },
-      { time: "11:30 AM", title: "Double Decker Bridge Crossing", desc: "Navigate the active 200-year-old bio-engineered root structure." },
-      { time: "03:00 PM", title: "Rainbow Falls Trek", desc: "Push deeper into the jungle paths to reach the crystal waterfall plunge pool." }
-    ],
-    5: [
-      { time: "Day 1 - 09:30 AM", title: "Sacred Grove Mawphlang", desc: "Forest walk analyzing native plants, orchids, and age-old sacrificial stones." },
-      { time: "Day 2 - 08:00 AM", title: "Double Decker Root System", desc: "Complete descent and establish field camps near natural spring networks." },
-      { time: "Day 3 - 10:00 AM", title: "Nohkalikai Ridge Overlook", desc: "Document the tallest plunge waterfall in the subcontinent from high ridge trails." },
-      { time: "Day 4 - 02:00 PM", title: "Mawsmai Cave Traverse", desc: "Spelunking through narrow limestone tunnels displaying columns and fossils." },
-      { time: "Day 5 - 04:30 PM", title: "Wandr Zone Shillong Debrief", desc: "Return to municipal zones. Sync system logs and check out of active status." }
-    ]
-  },
-  hampi: {
-    title: "Hampi Ruins Heritage Walk",
-    3: [
-      { time: "08:30 AM", title: "Virupaksha Temple Sunrise", desc: "Witness the morning sun lighting up the 7th-century active temple tower." },
-      { time: "01:00 PM", title: "Vittala Temple Stone Chariot", desc: "Explore the musical pillars and the iconic stone chariot structure." },
-      { time: "04:30 PM", title: "Hemakuta Hill Sunset Trek", desc: "Climb Hemakuta Hill for panoramic views of ruins dotting the boulder-strewn landscape." }
-    ],
-    5: [
-      { time: "Day 1 - 09:00 AM", title: "Anegundi Ancient Kingdom", desc: "Take a coracle boat ride across the Tungabhadra river to explore the mythological Kishkindha site." },
-      { time: "Day 2 - 08:30 AM", title: "Royal Enclosure Walk", desc: "Explore the Mahanavami Dibba, Stepped Tank, and Lotus Mahal structures." },
-      { time: "Day 3 - 09:00 AM", title: "Malyavanta Raghunatha Temple", desc: "Visit the temple built around massive boulders, hosting live bhajan recitations." },
-      { time: "Day 4 - 02:00 PM", title: "Bouldering Session", desc: "Participate in a guided safety bouldering session on the unique granite hills." },
-      { time: "Day 5 - 04:30 PM", title: "Sanapur Lake Coracle Ride", desc: "Unwind with a peaceful boat ride and sync check-in logs at Wandr Zone Hampi Base." }
-    ]
-  },
-  ladakh: {
-    title: "Leh Ladakh Himalayan Odyssey",
-    3: [
-      { time: "09:00 AM", title: "Leh Palace Exploration", desc: "Ascend to the 9-story palace overlooking Leh town, exploring historical royal chambers." },
-      { time: "01:30 PM", title: "Magnetic Hill & Confluence", desc: "Observe the gravity-defying hill phenomenon and the Indus-Zanskar river confluence." },
-      { time: "05:00 PM", title: "Shanti Stupa Sunset", desc: "Enjoy a silent sunset prayer with panoramic mountain view at the white dome stupa." }
-    ],
-    5: [
-      { time: "Day 1 - 10:00 AM", title: "Acclimatization Day", desc: "Mandatory rest in Leh town. Hydration monitoring and checking safety beacons." },
-      { time: "Day 2 - 08:00 AM", title: "Monasteries of Indus Valley", desc: "Visit Hemis and Thiksey monasteries to witness morning monk chants." },
-      { time: "Day 3 - 07:00 AM", title: "Khardung La Pass Crossing", desc: "Cross one of the highest motorable roads in the world (17,582ft) into Nubra Valley." },
-      { time: "Day 4 - 09:00 AM", title: "Pangong Tso Alpine Lake", desc: "Travel to the high altitude salt-water lake, checking in at Wandr Zone Lake Post." },
-      { time: "Day 5 - 03:00 PM", title: "Return to Leh & Sync", desc: "Return to Leh, finalize satellite beacon checkout, and join local traveler debrief." }
-    ]
-  },
-  munnar: {
-    title: "Munnar Tea Estate Trails",
-    3: [
-      { time: "08:00 AM", title: "Kolukkumalai Sunrise Safari", desc: "Take a rugged jeep safari to the highest organic tea estate in the world for sunrise." },
-      { time: "01:30 PM", title: "Tea Museum Tour", desc: "Learn about the history of tea processing in the region dating back to the British era." },
-      { time: "04:30 PM", title: "Eravikulam National Park", desc: "Spot the endangered Nilgiri Tahr mountain goat along the misty slopes." }
-    ],
-    5: [
-      { time: "Day 1 - 09:30 AM", title: "Lockhart Gap Viewpoint", desc: "Scenic ridge hike looking over lockhart valley clouds and tea gardens." },
-      { time: "Day 2 - 08:30 AM", title: "Anamudi Foothills Trek", desc: "Guided forest trail near the highest peak in South India." },
-      { time: "Day 3 - 10:00 AM", title: "Mattupetty Lake Kayaking", desc: "Eco-kayaking in the reservoir water surrounded by pine woods." },
-      { time: "Day 4 - 02:00 PM", title: "Marayoor Sandalwood Forests", desc: "Visit the natural sandalwood reserve and ancient dolmens (megalithic tombs)." },
-      { time: "Day 5 - 04:30 PM", title: "Attukad Waterfalls Picnic", desc: "Check-in at Wandr Zone Munnar for final route reviews and local spice sampling." }
-    ]
-  }
-};
+
 
 export default function Planner() {
   const router = useRouter();
@@ -108,7 +17,11 @@ export default function Planner() {
   const [compiledTimeline, setCompiledTimeline] = useState([]);
   const [resDetails, setResDetails] = useState({ title: "", days: "3", budget: "Explorer" });
 
+  const [destinationsList, setDestinationsList] = useState([]);
+
   useEffect(() => {
+    fetchDestinations();
+    
     // Check auto load param from discover card click
     const autoLoad = localStorage.getItem("wandr_auto_load_dest");
     if (autoLoad) {
@@ -118,7 +31,19 @@ export default function Planner() {
     }
   }, []);
 
-  const triggerCompile = (dest = destination, dur = duration, bud = budget) => {
+  const fetchDestinations = async () => {
+    try {
+      const response = await fetch("/api/destinations");
+      const res = await response.json();
+      if (res.success && res.data) {
+        setDestinationsList(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to load destinations:", err);
+    }
+  };
+
+  const triggerCompile = async (dest = destination, dur = duration, bud = budget) => {
     if (!dest) {
       alert("Please select a destination from the console dropdown.");
       return;
@@ -126,37 +51,103 @@ export default function Planner() {
 
     setViewState("loading");
 
-    setTimeout(() => {
-      setViewState("results");
-      const matched = ITINERARY_DATA[dest];
-      const steps = matched[dur] || matched[3];
+    try {
+      const response = await fetch(`/api/destinations/${dest}/itinerary?days=${dur}`);
+      const res = await response.json();
+
+      if (!res.success) {
+        throw new Error(res.error || "Failed to compile itinerary.");
+      }
+
+      const steps = res.data || [];
+      const mappedSteps = steps.map(s => ({
+        time: s.time_label,
+        title: s.title,
+        desc: s.description
+      }));
+
+      const destObj = destinationsList.find(d => d.slug === dest);
+      const title = destObj ? destObj.title : (dest.charAt(0).toUpperCase() + dest.slice(1) + " Trail");
 
       setResDetails({
-        title: matched.title,
+        title: title,
         days: dur,
         budget: bud
       });
-      setCompiledTimeline(steps);
+      setCompiledTimeline(mappedSteps);
+      setViewState("results");
 
       // Save parameters in localStorage
       localStorage.setItem("wandr_trip_planned", "true");
-      localStorage.setItem("wandr_planned_destination", matched.title);
+      localStorage.setItem("wandr_planned_destination", title);
       localStorage.setItem("wandr_planned_days", dur);
       localStorage.setItem("wandr_planned_budget", bud);
-    }, 1300);
+    } catch (err) {
+      console.error("Compile error:", err);
+      alert("An error occurred while compiling the itinerary: " + err.message);
+      setViewState("idle");
+    }
   };
 
-  const handleAssistantQuery = (e) => {
+  const handleAssistantQuery = async (e) => {
     if (e) e.preventDefault();
     if (!assistantInput.trim()) {
       alert("Please enter a destination or query.");
       return;
     }
-    router.push("/curated");
+
+    setViewState("loading");
+    try {
+      const response = await fetch("/api/planner/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: assistantInput }),
+      });
+
+      const res = await response.json();
+      if (!res.success) {
+        throw new Error(res.error || "Failed to process query.");
+      }
+
+      const data = res.data;
+      if (data.isCustom) {
+        const mappedSteps = (data.timeline || []).map(s => ({
+          time: s.time_label,
+          title: s.title,
+          desc: s.description
+        }));
+
+        setResDetails({
+          title: data.title || "Custom AI Itinerary",
+          days: data.duration || 3,
+          budget: budget
+        });
+        setCompiledTimeline(mappedSteps);
+        setViewState("results");
+
+        localStorage.setItem("wandr_trip_planned", "true");
+        localStorage.setItem("wandr_planned_destination", data.title || "Custom AI Trip");
+        localStorage.setItem("wandr_planned_days", data.duration || 3);
+        localStorage.setItem("wandr_planned_budget", budget);
+      } else {
+        if (data.slug) {
+          setDestination(data.slug);
+          setDuration(String(data.duration || 3));
+          await triggerCompile(data.slug, String(data.duration || 3), budget);
+        } else {
+          throw new Error("AI classification returned no slug for seeded destination.");
+        }
+      }
+    } catch (err) {
+      console.error("Assistant query error:", err);
+      alert("An error occurred: " + err.message);
+      setViewState("idle");
+    }
   };
 
   const resetForm = () => {
     setDestination("");
+    setAssistantInput("");
     setViewState("idle");
   };
 
@@ -195,7 +186,7 @@ export default function Planner() {
 
           {/* Action categories grid */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            <button onClick={() => setDestination("ziro")} className="glass-card hover:border-primary p-4 rounded-xl flex flex-col items-center gap-2">
+            <button onClick={() => { setDestination("ziro"); triggerCompile("ziro", duration, budget); }} className="glass-card hover:border-primary p-4 rounded-xl flex flex-col items-center gap-2">
               <span className="material-symbols-outlined text-primary text-2xl">route</span>
               <span className="font-label-sm text-[11px] text-on-surface-variant">Plan Trip</span>
             </button>
@@ -222,49 +213,113 @@ export default function Planner() {
           </div>
         </section>
 
+        {/* Loading skeleton view */}
+        {viewState === "loading" && (
+          <section className="max-w-3xl mx-auto mb-12 glass-card p-8 rounded-2xl border border-glass-stroke shadow-xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin shrink-0"></div>
+              <div>
+                <h3 className="text-xl text-on-surface font-headline-md animate-pulse">Compiling Luxury Itinerary...</h3>
+                <p className="text-sm text-on-surface-variant animate-pulse">Consulting travel logs & AI recommendation engines</p>
+              </div>
+            </div>
+            <div className="relative border-l border-glass-stroke pl-6 ml-6 space-y-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="relative animate-pulse">
+                  <span className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-primary/45 border border-glass-stroke"></span>
+                  <div className="h-4 bg-[#ffc880]/15 rounded w-1/4 mb-2"></div>
+                  <div className="h-6 bg-[#ffc880]/10 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-[#ffc880]/5 rounded w-5/6"></div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
+        {/* Timeline results view */}
+        {viewState === "results" && (
+          <section className="max-w-3xl mx-auto mb-12 glass-card p-6 md:p-8 rounded-2xl border border-glass-stroke shadow-2xl relative">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-glass-stroke pb-6 mb-8">
+              <div>
+                <span className="bg-primary/10 border border-primary/20 text-primary px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  {resDetails.budget} Tier · {resDetails.days} Days
+                </span>
+                <h2 className="font-display-lg text-3xl text-on-surface mt-3">{resDetails.title}</h2>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={resetForm}
+                  className="bg-white/5 hover:bg-white/10 border border-glass-stroke text-on-surface px-5 py-2.5 rounded-xl text-xs font-semibold transition-all"
+                >
+                  Plan Another
+                </button>
+                <button
+                  onClick={handleLockTrip}
+                  className="bg-primary text-on-primary px-5 py-2.5 rounded-xl text-xs font-semibold hover:scale-95 active:scale-95 transition-all shadow-lg flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">lock</span>
+                  <span>Lock Itinerary</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="relative border-l-2 border-primary/30 pl-6 ml-4 md:ml-6 space-y-8">
+              {compiledTimeline.map((step, idx) => (
+                <div key={idx} className="relative group">
+                  <span className="absolute -left-[33px] top-1 w-4 h-4 rounded-full bg-primary border-2 border-[#0a0f1e] shadow-md group-hover:scale-125 transition-transform duration-300"></span>
+                  <div>
+                    <span className="text-[11px] font-mono tracking-wider text-teal-trust font-bold uppercase">{step.time}</span>
+                    <h4 className="font-headline-md text-[17px] text-on-surface mt-1">{step.title}</h4>
+                    <p className="text-xs text-on-surface-variant mt-2 leading-relaxed font-body-md">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Quick plan blueprints templates */}
-        <section>
-          <div className="mb-8">
-            <span className="bg-secondary/15 text-secondary border border-secondary/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Quick Plan Templates</span>
-            <h2 className="font-display-lg text-3xl text-on-surface mt-2">Hot Destinations This Week</h2>
-            <p className="text-sm text-on-surface-variant mt-1 font-body-md">Instantly trigger AI routes by choosing one of these pre-configured regional blueprints.</p>
-          </div>
+        {viewState === "idle" && (
+          <section>
+            <div className="mb-8">
+              <span className="bg-secondary/15 text-secondary border border-secondary/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Quick Plan Templates</span>
+              <h2 className="font-display-lg text-3xl text-on-surface mt-2">Hot Destinations This Week</h2>
+              <p className="text-sm text-on-surface-variant mt-1 font-body-md">Instantly trigger AI routes by choosing one of these pre-configured regional blueprints.</p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { key: "ziro", title: "Ziro Valley Sights", desc: "Lush hills, organic bamboo plantations, and rich tribal heritage in Northeast India.", img: "/images/download.jpg", tag: "Arunachal" },
-              { key: "spiti", title: "Spiti Monastery Trail", desc: "High-altitude Buddhist temples, fossil valleys, and alpine cold deserts.", img: "/images/download (1).jpg", tag: "Himachal" },
-              { key: "hampi", title: "Hampi Ruins Walk", desc: "Historic stone chariots, royal pavilions, and boulder structures bordering rivers.", img: "/images/images.jpg", tag: "Karnataka" },
-              { key: "munnar", title: "Munnar Cloud Valleys", desc: "Misty tea estate walks, wild animal preserves, and peaceful hill stations.", img: "/images/images (2).jpg", tag: "Kerala" },
-            ].map((sight) => (
-              <div key={sight.key} className="glass-card rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 transition-all flex flex-col h-full group">
-                <div className="h-44 overflow-hidden relative">
-                  <img src={sight.img} alt={sight.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute top-3 right-3 bg-primary/95 text-[9px] px-2.5 py-1 rounded-full text-on-primary font-bold uppercase tracking-wider">{sight.tag}</div>
-                </div>
-                <div className="p-5 flex flex-col justify-between flex-grow gap-4">
-                  <div>
-                    <h4 className="font-headline-md text-[19px] text-on-surface">{sight.title}</h4>
-                    <p className="text-xs text-on-surface-variant mt-2 leading-relaxed line-clamp-2">{sight.desc}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { key: "ziro", title: "Ziro Valley Sights", desc: "Lush hills, organic bamboo plantations, and rich tribal heritage in Northeast India.", img: "/images/download.jpg", tag: "Arunachal" },
+                { key: "spiti", title: "Spiti Monastery Trail", desc: "High-altitude Buddhist temples, fossil valleys, and alpine cold deserts.", img: "/images/download (1).jpg", tag: "Himachal" },
+                { key: "hampi", title: "Hampi Ruins Walk", desc: "Historic stone chariots, royal pavilions, and boulder structures bordering rivers.", img: "/images/images.jpg", tag: "Karnataka" },
+                { key: "munnar", title: "Munnar Cloud Valleys", desc: "Misty tea estate walks, wild animal preserves, and peaceful hill stations.", img: "/images/images (2).jpg", tag: "Kerala" },
+              ].map((sight) => (
+                <div key={sight.key} className="glass-card rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 transition-all flex flex-col h-full group">
+                  <div className="h-44 overflow-hidden relative">
+                    <img src={sight.img} alt={sight.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute top-3 right-3 bg-primary/95 text-[9px] px-2.5 py-1 rounded-full text-on-primary font-bold uppercase tracking-wider">{sight.tag}</div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setDestination(sight.key);
-                      triggerCompile(sight.key, duration, budget);
-                      // Compilation Console removed
-                    }}
-                    className="bg-primary/10 border border-primary/20 text-primary py-2.5 rounded-lg text-xs font-semibold hover:bg-primary hover:text-on-primary transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <span className="material-symbols-outlined text-xs">bolt</span>
-                    <span>Quick Plan</span>
-                  </button>
+                  <div className="p-5 flex flex-col justify-between flex-grow gap-4">
+                    <div>
+                      <h4 className="font-headline-md text-[19px] text-on-surface">{sight.title}</h4>
+                      <p className="text-xs text-on-surface-variant mt-2 leading-relaxed line-clamp-2">{sight.desc}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDestination(sight.key);
+                        triggerCompile(sight.key, duration, budget);
+                      }}
+                      className="bg-primary/10 border border-primary/20 text-primary py-2.5 rounded-lg text-xs font-semibold hover:bg-primary hover:text-on-primary transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-xs">bolt</span>
+                      <span>Quick Plan</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer />

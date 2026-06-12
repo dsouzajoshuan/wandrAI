@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { ok, fail } from '@/lib/api-response';
-import { generateGeminiResponse } from '@/lib/gemini';
+import { generateOllamaResponse } from '@/lib/ollama';
 import { companionAiSchema } from '@/lib/validation/chat';
 
 export async function POST(request: NextRequest) {
@@ -55,8 +55,8 @@ Act and chat exactly as ${companion.full_name || 'this traveler'}. Keep the resp
 Your role is to help users find suitable companions, answer queries about companion compatibility, suggest creative icebreakers, and recommend safety practices during meetups. Keep your tone encouraging, approachable, and adventurous.`;
     }
 
-    // Call Gemini
-    const reply = await generateGeminiResponse(systemPrompt, history, message);
+    // Call Ollama
+    const reply = await generateOllamaResponse(systemPrompt, history, message);
 
     // Log turns
     const { error: logError } = await supabase

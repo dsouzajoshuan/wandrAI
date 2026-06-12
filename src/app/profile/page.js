@@ -32,6 +32,7 @@ export default function Profile() {
   const [editEmail, setEditEmail] = useState("");
   const [trustScore, setTrustScore] = useState(80);
   const [idVerified, setIdVerified] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -71,8 +72,10 @@ export default function Profile() {
           setUserName(profile.full_name || user.user_metadata?.full_name || "Traveler");
           setTrustScore(profile.trust_score ?? 80);
           setIdVerified(profile.id_verified ?? false);
+          setAvatarUrl(profile.avatar_url || user.user_metadata?.avatar_url || "");
         } else {
           setUserName(user.user_metadata?.full_name || "Traveler");
+          setAvatarUrl(user.user_metadata?.avatar_url || "");
         }
 
         // Load active trip
@@ -192,6 +195,55 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Session expired. Please log in again.");
+        return;
+      }
+
+      // 1. Ensure bucket 'avatars' exists (attempt creation, ignore if already exists)
+      await supabase.storage.createBucket("avatars", {
+        public: true,
+        fileSizeLimit: 2097152, // 2MB
+      }).catch(() => {}); // ignore error if bucket already exists
+
+      // 2. Upload file
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+
+      const { data, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // 3. Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      // 4. Update profile in profiles table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      alert("Profile picture updated successfully!");
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      alert("Failed to upload profile picture: " + err.message);
+    }
+  };
+
   const handleAddContact = (e) => {
     e.preventDefault();
     if (!newContactName.trim() || !newContactPhone.trim()) return;
@@ -279,8 +331,22 @@ export default function Profile() {
             <div className="glass-card rounded-2xl border border-glass-stroke p-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl relative overflow-hidden w-full">
               <div className="absolute -top-12 -left-12 bg-primary/5 w-60 h-60 rounded-full blur-3xl pointer-events-none"></div>
               <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                <div className="relative">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" className="w-24 h-24 rounded-full object-cover border-2 border-primary shadow-md"/>
+                <div className="relative group/avatar cursor-pointer">
+                  <img 
+                    src={avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop"} 
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary shadow-md"
+                    alt="User Avatar"
+                  />
+                  <label htmlFor="avatar-file-input" className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer">
+                    <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="avatar-file-input"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
                   <span className="absolute bottom-1 right-1 w-5 h-5 bg-teal-trust border-2 border-surface-container rounded-full flex items-center justify-center text-[10px] text-white">✓</span>
                 </div>
                 <div className="text-center md:text-left space-y-1">
