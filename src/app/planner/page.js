@@ -18,12 +18,6 @@ export default function Planner() {
   const [destinationsList, setDestinationsList] = useState([]);
 
   useEffect(() => {
-    // If a trip is already finalized, stay on the maps page (orchestrator)
-    if (localStorage.getItem("wandr_trip_planned") === "true") {
-      router.replace("/orchestrator");
-      return;
-    }
-
     fetchDestinations();
     
     // Check auto load param from discover card click

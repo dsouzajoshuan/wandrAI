@@ -127,15 +127,15 @@ export default function TripOrchestrator() {
 
   useEffect(() => {
     const isPlanned = localStorage.getItem("wandr_trip_planned") === "true";
-    let dest = "Ziro Valley Cultural Expedition";
-    let days = "3";
-    let budget = "Explorer";
-
-    if (isPlanned) {
-      dest = localStorage.getItem("wandr_planned_destination") || dest;
-      days = localStorage.getItem("wandr_planned_days") || days;
-      budget = localStorage.getItem("wandr_planned_budget") || budget;
+    
+    if (!isPlanned) {
+      router.replace("/planner");
+      return;
     }
+
+    let dest = localStorage.getItem("wandr_planned_destination") || "Ziro Valley Cultural Expedition";
+    let days = localStorage.getItem("wandr_planned_days") || "3";
+    let budget = localStorage.getItem("wandr_planned_budget") || "Explorer";
 
     // Determine clean title and budget tier
     let calculatedTier = "Explorer";
