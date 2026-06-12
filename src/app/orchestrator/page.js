@@ -311,42 +311,64 @@ export default function TripOrchestrator() {
     }
   };
 
-  const handleEmergencySOS = () => {
-    const confirmSOS = confirm('Activate SOS Emergency Services? Your contacts and local emergency responders will be alerted immediately.');
-    if (confirmSOS) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            setUserLat(lat);
-            setUserLng(lng);
-            setIsSosActive(true);
-
-            const tripId = localStorage.getItem("wandr_trip_id");
-            if (tripId) {
-              try {
-                await fetch("/api/safety/sos", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ trip_id: tripId, lat, lng })
-                });
-              } catch (err) {
-                console.error("SOS API error:", err);
-              }
-            }
-            alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\nCoordinates sent:\nLAT: ${lat.toFixed(4)}°\nLON: ${lng.toFixed(4)}°`);
-          },
-          (error) => {
-            console.warn("Geolocation failed during SOS.", error);
-            setIsSosActive(true);
-            alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\n(Fallback coordinates: LAT: ${userLat.toFixed(4)}°, LON: ${userLng.toFixed(4)}°)`);
-          }
-        );
-      } else {
-        setIsSosActive(true);
-        alert(`SOS ACTIVATED. Dispatching location to emergency services. Please remain where you are if safe.\n\n(Fallback coordinates: LAT: ${userLat.toFixed(4)}°, LON: ${userLng.toFixed(4)}°)`);
+  const handleEmergencySOS = async () => {
+    setIsSosActive(true);
+    
+    const sendN8nAlert = async (lat, lng, addressText = "") => {
+      try {
+        await fetch("/api/safety/n8n", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng, addressText })
+        });
+      } catch (err) {
+        console.error("N8n SOS failed:", err);
       }
+    };
+
+    const triggerSOS = (lat, lng, addressText = "") => {
+      setUserLat(lat);
+      setUserLng(lng);
+      sendN8nAlert(lat, lng, addressText);
+      const tripId = localStorage.getItem("wandr_trip_id");
+      if (tripId) {
+        fetch("/api/safety/sos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trip_id: tripId, lat, lng })
+        }).catch(err => console.error("SOS API error:", err));
+      }
+      alert(`SOS ACTIVATED. Dispatching location to emergency services.\n\nLocation sent:\nLAT: ${lat.toFixed(4)}°\nLON: ${lng.toFixed(4)}°\n${addressText}`);
+    };
+
+    const handleFallbackLocation = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data && data.latitude && data.longitude) {
+          triggerSOS(data.latitude, data.longitude, `${data.city}, ${data.region}, ${data.country_name}`);
+        } else {
+          throw new Error("IP Geolocation failed");
+        }
+      } catch (e) {
+        // Absolute fallback if everything fails
+        triggerSOS(userLat, userLng, "Fallback Location");
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          triggerSOS(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn("Geolocation failed during SOS.", error);
+          handleFallbackLocation();
+        },
+        { timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      handleFallbackLocation();
     }
   };
 

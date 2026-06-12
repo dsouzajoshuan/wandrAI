@@ -53,28 +53,23 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Fire-and-forget notification to n8n webhook (asynchronous fetch)
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
-    if (n8nWebhookUrl) {
-      fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          alert_id: alertData.id,
-          user_id: user.id,
-          full_name: user.user_metadata?.full_name || '',
-          phone: user.phone || '',
-          trip_id,
-          lat,
-          lng,
-          status: 'active',
-          timestamp: new Date().toISOString()
-        })
-      }).catch((err) => {
-        console.error('SOS n8n webhook notification failure:', err);
-      });
-    } else {
-      console.warn('N8N_WEBHOOK_URL environment variable is not defined.');
-    }
+    const n8nWebhookUrl = "http://localhost:5678/mcp-server/http";
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMWY2YTRkNC0xOTk4LTQ2Y2ItODc2Yi00MTdhY2UyNTNiNTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6ImUzYjEwMmJiLTY1YjMtNDE2YS1iYjI0LTMyNTkzZmQ2MTg4ZSIsImlhdCI6MTc4MTI3MTA3Nn0.73uHBTB4i-ZzIv7t_wII2-7LJkix0m4eMi3IK5OKZ1E";
+    const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+
+    fetch(n8nWebhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        phone: "+916362733807",
+        message: `EMERGENCY: I need help. My current live location is: ${mapsLink}`
+      })
+    }).catch((err) => {
+      console.error('SOS n8n webhook notification failure:', err);
+    });
 
     return ok(alertData, 201);
   } catch (err: any) {
