@@ -74,7 +74,54 @@ export default function Companion() {
         };
       });
 
-      setCompanionsList(mapped);
+      const hardcodedCompanions = [
+        {
+          id: "11111111-1111-1111-1111-111111111111",
+          name: "Aria Sterling",
+          image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop",
+          trust: 98,
+          fit: 96,
+          desc: "Expert mountain trekker & photographer. Looking for adventurous souls.",
+          tags: ["Trekking", "Photography", "Mountains"],
+          specialty: "Adventure",
+          dest: "Spiti Valley (India)"
+        },
+        {
+          id: "22222222-2222-2222-2222-222222222222",
+          name: "Liam Chen",
+          image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+          trust: 92,
+          fit: 94,
+          desc: "Cultural history enthusiast. Slow travel is my vibe.",
+          tags: ["History", "Culture", "Local Food"],
+          specialty: "Culture",
+          dest: "Hampi (India)"
+        },
+        {
+          id: "33333333-3333-3333-3333-333333333333",
+          name: "Maya Patel",
+          image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+          trust: 95,
+          fit: 98,
+          desc: "Nature lover and wellness seeker. Early riser for the best views.",
+          tags: ["Nature", "Wellness", "Hiking"],
+          specialty: "Wellness",
+          dest: "Ziro Valley (India)"
+        },
+        {
+          id: "44444444-4444-4444-4444-444444444444",
+          name: "Julian Cross",
+          image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop",
+          trust: 89,
+          fit: 91,
+          desc: "Urban explorer and foodie. Let's find the best street food.",
+          tags: ["Food", "City Walk", "Nightlife"],
+          specialty: "Culinary",
+          dest: "Delhi (India)"
+        }
+      ];
+
+      setCompanionsList([...mapped, ...hardcodedCompanions]);
     } catch (err) {
       console.error("Failed to load companions data:", err);
     }

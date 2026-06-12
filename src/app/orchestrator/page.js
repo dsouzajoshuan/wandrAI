@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 const TRIP_DATA = {
@@ -115,12 +115,108 @@ export default function TripOrchestrator() {
   const [userLat, setUserLat] = useState(27.2023);
   const [userLng, setUserLng] = useState(93.8291);
 
-  useEffect(() => {
-    const active = localStorage.getItem("wandr_planned_destination") || "Tokyo Fallback";
-    const mappedKey = TRIP_DATA[active] ? active : "Tokyo Fallback";
-    setDestination(mappedKey);
+  const [activePanel, setActivePanel] = useState("map");
+  const [tripTimeline, setTripTimeline] = useState([]);
+  const [mapsUrl, setMapsUrl] = useState("");
+  const [tripDetails, setTripDetails] = useState({
+    title: "Ziro Valley Cultural Expedition",
+    location: "Ziro, Arunachal Pradesh",
+    days: 3,
+    budgetTier: "Explorer"
+  });
 
-    const activeTripInfo = TRIP_DATA[mappedKey];
+  useEffect(() => {
+    const isPlanned = localStorage.getItem("wandr_trip_planned") === "true";
+    let dest = "Ziro Valley Cultural Expedition";
+    let days = "3";
+    let budget = "Explorer";
+
+    if (isPlanned) {
+      dest = localStorage.getItem("wandr_planned_destination") || dest;
+      days = localStorage.getItem("wandr_planned_days") || days;
+      budget = localStorage.getItem("wandr_planned_budget") || budget;
+    }
+
+    // Determine clean title and budget tier
+    let calculatedTier = "Explorer";
+    if (budget.toLowerCase().includes("royal") || dest.toLowerCase().includes("royal")) {
+      calculatedTier = "Royal";
+    } else if (
+      budget.toLowerCase().includes("elite") ||
+      dest.toLowerCase().includes("elite") ||
+      budget.toLowerCase().includes("premium") ||
+      dest.toLowerCase().includes("premium")
+    ) {
+      calculatedTier = "Elite";
+    } else if (budget.toLowerCase().includes("explorer") || dest.toLowerCase().includes("explorer")) {
+      calculatedTier = "Explorer";
+    }
+
+    const cleanDest = dest.replace(/\(Explorer\)|\(Elite\)|\(Royal\)/gi, "").trim();
+
+    // Look for matching key in TRIP_DATA
+    let activeTripInfo = null;
+    let mappedKey = "Tokyo Fallback";
+    
+    const hardcodedKey = Object.keys(TRIP_DATA).find(
+      (k) =>
+        k.toLowerCase() === cleanDest.toLowerCase() ||
+        cleanDest.toLowerCase().includes(k.toLowerCase()) ||
+        k.toLowerCase().includes(cleanDest.toLowerCase())
+    );
+    
+    if (hardcodedKey) {
+      mappedKey = hardcodedKey;
+      activeTripInfo = TRIP_DATA[hardcodedKey];
+    } else {
+      activeTripInfo = {
+        location: cleanDest,
+        welcome: `Welcome to your curated ${days}-day ${cleanDest} adventure! I have compiled your custom concierge route in the ${calculatedTier} tier. Let me know if you would like me to coordinate premium transport or reserve local dining options.`,
+        markers: [
+          { id: 1, name: "Luxury Arrival Point", time: "11:00 AM", type: "Arrival Check-in", top: "35%", left: "40%", color: "bg-teal-trust" },
+          { id: 2, name: "Premium Activity", time: "3:30 PM", type: "Afternoon Tour", top: "55%", right: "35%", color: "bg-[#f5a623]" }
+        ]
+      };
+    }
+
+    setDestination(mappedKey);
+    
+    setTripDetails({
+      title: cleanDest,
+      location: activeTripInfo.location || cleanDest,
+      days: parseInt(days, 10) || 3,
+      budgetTier: calculatedTier
+    });
+
+    // Read saved timeline activity titles for map waypoints
+    let timelineActivities = [];
+    try {
+      timelineActivities = JSON.parse(localStorage.getItem("wandr_planned_timeline") || "[]");
+    } catch {}
+    setTripTimeline(timelineActivities);
+
+    // Build Google Maps Directions embed URL from activity names + destination
+    const buildMapsUrl = (destination, activities) => {
+      const stops = activities.filter(Boolean).slice(0, 8); // max 8 waypoints for Maps
+      if (stops.length === 0) {
+        // Fallback: just show the destination
+        return `https://maps.google.com/maps?q=${encodeURIComponent(destination)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`;
+      }
+      if (stops.length === 1) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(stops[0] + " " + destination)}&t=k&z=14&ie=UTF8&iwloc=&output=embed`;
+      }
+      // Use Google Maps Directions embed with origin, waypoints, destination
+      const origin = encodeURIComponent(`${stops[0]}, ${destination}`);
+      const dest = encodeURIComponent(`${stops[stops.length - 1]}, ${destination}`);
+      const waypoints = stops.slice(1, -1)
+        .map(s => encodeURIComponent(`${s}, ${destination}`))
+        .join("|");
+      const waypointsParam = waypoints ? `&waypoints=${waypoints}` : "";
+      return `https://www.google.com/maps/embed/v1/directions?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ""}&origin=${origin}&destination=${dest}${waypointsParam}&mode=driving`;
+    };
+
+    setMapsUrl(buildMapsUrl(cleanDest, timelineActivities));
+
     setMessages([
       {
         id: 1,
@@ -254,7 +350,59 @@ export default function TripOrchestrator() {
     }
   };
 
-  const activeTrip = TRIP_DATA[destination];
+  const activeTrip = TRIP_DATA[destination] || TRIP_DATA["Tokyo Fallback"];
+
+  const getBudgetBreakdown = (tier, days) => {
+    const rates = {
+      Explorer: {
+        accommodation: { title: "Boutique Homestays & Eco-Lodges", price: 6500 },
+        transport: { title: "Regional Public Transit & Shared Cabs", price: 3000 },
+        dining: { title: "Local Diners & Street Food Trails", price: 4000 },
+        activities: { title: "Self-Guided Hikes & Public Sightseeing", price: 5000 },
+        concierge: { title: "Wandr AI Standard Support", price: 2500, flat: true }
+      },
+      Elite: {
+        accommodation: { title: "4-Star Resorts & Private Villa Stays", price: 28000 },
+        transport: { title: "Private Chauffeur Sedan Transfers", price: 15000 },
+        dining: { title: "Fine Dining & Boutique Bistro Tours", price: 18000 },
+        activities: { title: "Curated Private Tours & Priority Access", price: 22000 },
+        concierge: { title: "Wandr AI Elite Priority Support", price: 15000, flat: true }
+      },
+      Royal: {
+        accommodation: { title: "5-Star Ultra-Luxury Heritage Stays", price: 85000 },
+        transport: { title: "Private SUV, Yacht Cruises, & Flights", price: 45000 },
+        dining: { title: "Michelin Dining & Private Chef Service", price: 50000 },
+        activities: { title: "Exclusive VIP Access & Helicopter Charter", price: 60000 },
+        concierge: { title: "24/7 Dedicated Concierge & Flight Loop", price: 40000, flat: true }
+      }
+    };
+
+    const currentRates = rates[tier] || rates.Explorer;
+    const accommodationTotal = currentRates.accommodation.price * days;
+    const transportTotal = currentRates.transport.price * days;
+    const diningTotal = currentRates.dining.price * days;
+    const activitiesTotal = currentRates.activities.price * days;
+    const conciergeTotal = currentRates.concierge.price;
+
+    const total = accommodationTotal + transportTotal + diningTotal + activitiesTotal + conciergeTotal;
+
+    return {
+      categories: [
+        { name: "Accommodation", detail: currentRates.accommodation.title, val: accommodationTotal, icon: "hotel", pct: Math.round((accommodationTotal / total) * 100) },
+        { name: "Transportation", detail: currentRates.transport.title, val: transportTotal, icon: "directions_car", pct: Math.round((transportTotal / total) * 100) },
+        { name: "Gastronomy & Dining", detail: currentRates.dining.title, val: diningTotal, icon: "restaurant", pct: Math.round((diningTotal / total) * 100) },
+        { name: "Curated Experiences", detail: currentRates.activities.title, val: activitiesTotal, icon: "local_activity", pct: Math.round((activitiesTotal / total) * 100) },
+        { name: "Wandr Concierge Fee", detail: currentRates.concierge.title, val: conciergeTotal, icon: "room_service", pct: Math.round((conciergeTotal / total) * 100) }
+      ],
+      total: total
+    };
+  };
+
+  const budgetBreakdown = getBudgetBreakdown(tripDetails.budgetTier, tripDetails.days);
+
+  const formatPrice = (val) => {
+    return `₹${val.toLocaleString("en-IN")}`;
+  };
 
   return (
     <>
@@ -276,65 +424,159 @@ export default function TripOrchestrator() {
       <main className="pt-16 min-h-screen flex flex-col md:flex-row gap-0 overflow-hidden relative z-10">
         
         <section className="w-full md:w-3/5 relative h-[512px] md:h-[calc(100vh-4rem)] bg-surface-container-lowest border-r border-glass-stroke overflow-hidden group">
-          <div className="absolute inset-0 bg-[#0b0e14]">
-            <iframe
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(activeTrip.location)}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
-              className="w-full h-full border-none opacity-80"
-              style={{ filter: "invert(90%) hue-rotate(180deg) contrast(110%) saturate(70%)" }}
-              allowFullScreen=""
-              loading="lazy"
-            ></iframe>
+          
+          {/* Tab Selector */}
+          <div className="absolute top-4 right-4 z-30 flex gap-1 bg-black/60 backdrop-blur-md p-1 rounded-full border border-glass-stroke shadow-lg">
+            {["map", "budget"].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActivePanel(tab)}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wider cursor-pointer border-none uppercase transition-all ${
+                  activePanel === tab
+                    ? "bg-primary text-on-primary shadow-md"
+                    : "text-on-surface-variant hover:text-on-surface bg-transparent"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-85" preserveAspectRatio="xMidYMid slice" viewBox="0 0 800 600">
-            <path d="M150,480 Q320,420 420,220 T720,120" fill="none" stroke="url(#lineGradient)" strokeDasharray="6,4" strokeWidth="3"></path>
-            <defs>
-              <linearGradient id="lineGradient" x1="0%" x2="100%" y1="0%" y2="0%">
-                <stop offset="0%" style={{ stopColor: "#00C9A7", stopOpacity: 1 }}></stop>
-                <stop offset="100%" style={{ stopColor: "#f5a623", stopOpacity: 1 }}></stop>
-              </linearGradient>
-            </defs>
-          </svg>
+          {activePanel === "budget" ? (
+            <div className="absolute inset-0 bg-surface-container-lowest/95 overflow-y-auto p-6 md:p-8 pt-20 no-scrollbar z-10 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-glass-stroke pb-4 mb-6 gap-4">
+                  <div>
+                    <h3 className="font-display-lg text-2xl text-primary font-bold">{tripDetails.title}</h3>
+                    <p className="text-xs text-on-surface-variant font-mono uppercase tracking-wider mt-1">
+                      {tripDetails.budgetTier} Tier • {tripDetails.days} Days Coordinator Breakdowns
+                    </p>
+                  </div>
+                  <div className="sm:text-right">
+                    <span className="text-[10px] font-bold text-on-surface-variant font-mono uppercase tracking-wider block">Estimated Total Cost</span>
+                    <span className="text-2xl font-bold text-teal-trust">{formatPrice(budgetBreakdown.total)}</span>
+                  </div>
+                </div>
 
-          {activeTrip.markers.map((marker) => (
-            <div
-              key={marker.id}
-              className="absolute z-10"
-              style={{
-                top: marker.top,
-                left: marker.left ? marker.left : undefined,
-                right: marker.right ? marker.right : undefined
-              }}
-            >
-              <div className="group/card flex items-center gap-3 bg-black/50 backdrop-blur-md border border-glass-stroke py-2 px-4 rounded-full hover:bg-black/70 transition-all duration-300 cursor-pointer">
-                <span className={`w-6 h-6 ${marker.color} rounded-full flex items-center justify-center text-[10px] font-bold text-on-secondary-fixed shadow-lg`}>
-                  {marker.id}
-                </span>
-                <div>
-                  <h3 className="font-title-lg text-sm text-on-surface leading-none">{marker.name}</h3>
-                  <p className="text-[10px] text-on-surface-variant/80 mt-1 uppercase tracking-wider">{marker.time} • {marker.type}</p>
+                <div className="space-y-4">
+                  {budgetBreakdown.categories.map((cat, idx) => (
+                    <div key={idx} className="bg-glass-fill border border-glass-stroke p-4 rounded-xl flex flex-col gap-2 hover:border-primary/30 transition-all duration-300">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-primary bg-primary/10 p-2.5 rounded-lg text-xl">{cat.icon}</span>
+                          <div>
+                            <h4 className="font-title-lg text-sm text-on-surface font-semibold">{cat.name}</h4>
+                            <p className="text-xs text-on-surface-variant mt-0.5 leading-normal">{cat.detail}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-bold text-on-surface font-mono">{formatPrice(cat.val)}</span>
+                          <div className="text-[9px] text-on-surface-variant font-mono mt-0.5">{cat.pct}% of budget</div>
+                        </div>
+                      </div>
+                      
+                      {/* Premium Percentage Progress Bar */}
+                      <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden mt-1">
+                        <div 
+                          className="bg-primary h-full rounded-full transition-all duration-700" 
+                          style={{ width: `${cat.pct}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
 
-          <div className="absolute bottom-10 left-10 flex flex-col gap-4">
-            <button
-              onClick={() => router.push("/companion")}
-              className="group relative bg-[#f5a623] hover:bg-[#ffb955] text-on-primary px-8 py-4 rounded-xl font-title-lg text-lg hover:scale-[1.02] active:scale-95 flex items-center gap-3 transition-all cursor-pointer shadow-lg shadow-[#f5a623]/20 border-none outline-none"
-            >
-              <span className="material-symbols-outlined text-2xl">person_add_alt</span>
-              <span className="relative z-10">Find Travel Companion</span>
-            </button>
-            <button
-              onClick={handleEmergencySOS}
-              className="bg-red-600 hover:bg-red-500 text-white flex items-center gap-3 px-8 py-4 rounded-xl font-title-lg text-lg border border-red-400/30 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer shadow-lg shadow-red-600/30"
-              style={{ animation: "emergencyPulse 2s infinite" }}
-            >
-              <span className="material-symbols-outlined text-2xl animate-pulse">emergency</span>
-              <span>Emergency SOS</span>
-            </button>
-          </div>
+              {/* Concierge quote & billing block */}
+              <div className="mt-8 border-t border-glass-stroke pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p className="text-[10px] text-on-surface-variant/70 font-mono italic max-w-md text-center sm:text-left">
+                  *All prices calculated are luxury guidelines based on average partner tariffs for active seasonal slots. Concierge coordination secures instant booking locks on confirmation.
+                </p>
+                <button
+                  onClick={() => alert("Proceeding to premium checkout gateway...")}
+                  className="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-xs font-semibold hover:shadow-lg hover:shadow-primary/20 transition-all border-none cursor-pointer shrink-0"
+                >
+                  Pay & Confirm Trip
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Dynamic Google Maps Directions — shows real route between itinerary stops */}
+              <div className="absolute inset-0 bg-[#0b0e14]">
+                {mapsUrl ? (
+                  <iframe
+                    src={mapsUrl}
+                    className="w-full h-full border-none"
+                    style={{ filter: "invert(92%) hue-rotate(180deg) contrast(105%) saturate(65%)" }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3 text-on-surface-variant">
+                      <span className="material-symbols-outlined text-5xl animate-pulse text-primary">map</span>
+                      <p className="text-sm font-mono">Loading route map…</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Scrollable stop cards — top-left overlay showing itinerary stops */}
+              {tripTimeline.length > 0 && (
+                <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 max-h-[60%] overflow-y-auto no-scrollbar">
+                  {tripTimeline.slice(0, 9).map((stop, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2.5 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-full hover:border-primary/50 transition-all duration-200 cursor-default group"
+                    >
+                      <span
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 shadow"
+                        style={{
+                          background: idx === 0
+                            ? "#00C9A7"
+                            : idx === tripTimeline.slice(0, 9).length - 1
+                            ? "#f5a623"
+                            : "rgba(255,255,255,0.15)",
+                          color: idx === 0 || idx === tripTimeline.slice(0, 9).length - 1 ? "#000" : "#fff"
+                        }}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span className="text-[11px] text-white/90 font-medium truncate max-w-[180px]">{stop}</span>
+                    </div>
+                  ))}
+                  {/* Route line indicator */}
+                  <div className="flex items-center gap-2 px-3 py-1 mt-1">
+                    <div className="flex-1 h-px bg-gradient-to-r from-teal-400 to-amber-400 opacity-60" />
+                    <span className="text-[9px] text-white/40 font-mono uppercase tracking-wider shrink-0">Driving Route</span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-amber-400 to-teal-400 opacity-60" />
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom action buttons */}
+              <div className="absolute bottom-10 left-10 flex flex-col gap-4 z-20">
+                <button
+                  onClick={() => router.push("/companion")}
+                  className="group relative bg-[#f5a623] hover:bg-[#ffb955] text-on-primary px-8 py-4 rounded-xl font-title-lg text-lg hover:scale-[1.02] active:scale-95 flex items-center gap-3 transition-all cursor-pointer shadow-lg shadow-[#f5a623]/20 border-none outline-none"
+                >
+                  <span className="material-symbols-outlined text-2xl">person_add_alt</span>
+                  <span className="relative z-10">Find Travel Companion</span>
+                </button>
+                <button
+                  onClick={handleEmergencySOS}
+                  className="bg-red-600 hover:bg-red-500 text-white flex items-center gap-3 px-8 py-4 rounded-xl font-title-lg text-lg border border-red-400/30 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer shadow-lg shadow-red-600/30"
+                  style={{ animation: "emergencyPulse 2s infinite" }}
+                >
+                  <span className="material-symbols-outlined text-2xl animate-pulse">emergency</span>
+                  <span>Emergency SOS</span>
+                </button>
+              </div>
+            </>
+          )}
         </section>
 
         <section className="w-full md:w-2/5 flex flex-col h-[614px] md:h-[calc(100vh-4rem)] bg-surface">

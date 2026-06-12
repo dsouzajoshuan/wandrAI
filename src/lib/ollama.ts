@@ -4,16 +4,8 @@ interface ChatMessage {
   parts?: { text: string }[] | string;
 }
 
-export async function generateOllamaResponse(
-  systemPrompt: string,
-  history: ChatMessage[] = [],
-  message: string
-): Promise<string> {
-  const ollamaHost = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-  const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2';
-
-  // Map history to Ollama message format
-  const messages = [
+function buildMessages(systemPrompt: string, history: ChatMessage[], message: string) {
+  return [
     { role: 'system', content: systemPrompt },
     ...history.map((item) => {
       let textContent = '';
@@ -24,25 +16,76 @@ export async function generateOllamaResponse(
       } else if (Array.isArray(item.parts)) {
         textContent = item.parts[0]?.text || '';
       }
-
       const role = item.role === 'model' || item.role === 'assistant' ? 'assistant' : 'user';
-      return {
-        role,
-        content: textContent,
-      };
+      return { role, content: textContent };
     }),
-    { role: 'user', content: message }
+    { role: 'user', content: message },
   ];
+}
+
+/**
+ * Standard Ollama call — used for conversational assistant replies.
+ */
+export async function generateOllamaResponse(
+  systemPrompt: string,
+  history: ChatMessage[] = [],
+  message: string,
+  format?: any
+): Promise<string> {
+  const ollamaHost = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2';
+
+  const messages = buildMessages(systemPrompt, history, message);
 
   const response = await fetch(`${ollamaHost}/api/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: ollamaModel,
       messages,
       stream: false,
+      // Lower temperature for structured extraction — less creativity, more accuracy
+      options: { temperature: 0.1 },
+      ...(format && { format }),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Ollama API error (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.message?.content || '';
+}
+
+/**
+ * Creative Ollama call — used for knowledge-based itinerary generation.
+ * Uses a higher temperature so the model draws richly on its training data.
+ */
+export async function generateOllamaCreative(
+  systemPrompt: string,
+  message: string,
+  format?: any
+): Promise<string> {
+  const ollamaHost = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2';
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: message },
+  ];
+
+  const response = await fetch(`${ollamaHost}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ollamaModel,
+      messages,
+      stream: false,
+      // Higher temperature for richer, more detailed knowledge-based content
+      options: { temperature: 0.7 },
+      ...(format && { format }),
     }),
   });
 
